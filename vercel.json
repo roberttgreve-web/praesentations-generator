@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/generate.js": { "maxDuration": 60 },
+    "api/refine.js":   { "maxDuration": 60 },
+    "api/generate-presentation.js": { "maxDuration": 60 },
+    "api/deploy-presentation.js":   { "maxDuration": 60 }
+  }
+}

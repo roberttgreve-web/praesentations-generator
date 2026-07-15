@@ -1,0 +1,9 @@
+{
+  "name": "praesentations-generator",
+  "version": "1.0.0",
+  "description": "5-Schritte-Assistent zur Erstellung individueller Sales-Präsentationen (inkl. KI-Schulcard via AWS Bedrock, GitHub/Vercel Live-Deploy)",
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.600.0",
+    "dotenv": "^16.4.5"
+  }
+}

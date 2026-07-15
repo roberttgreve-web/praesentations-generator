@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DEIN ERSTER TAG – Sales Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Roboto', 'sans-serif'] },
+          colors: {
+            brand: '#00afd6',
+            'brand-dark': '#0099bb',
+            yellow: '#ffec5c',
+            dark: '#181818',
+            light: '#fafafa',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --brand: #00afd6;
+      --yellow: #ffec5c;
+      --dark: #181818;
+      --light: #fafafa;
+    }
+
+    html, body {
+      margin: 0; padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Roboto', sans-serif;
+      background: var(--light);
+      color: var(--dark);
+    }
+
+    #stage {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      overflow: hidden;
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .slide.prev { opacity: 0; }
+
+    /* ── PROGRESS BAR ── */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: var(--brand);
+      z-index: 100;
+      transition: width 0.4s ease;
+    }
+
+    /* ── NAVIGATION ── */
+    #nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 72px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px 16px;
+      background: linear-gradient(0deg, rgba(250,250,250,0.98) 60%, transparent);
+    }
+
+    .nav-btn {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 1.5px solid #e0e0e0;
+      background: white;
+      color: var(--dark);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .nav-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .nav-btn.primary {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: white;
+      box-shadow: 0 4px 14px rgba(0,175,214,0.35);
+    }
+    .nav-btn.primary:hover { background: #0099bb; }
+    .nav-btn.hidden-btn { opacity: 0; pointer-events: none; }
+
+    .dot-row { display: flex; gap: 6px; align-items: center; }
+    .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #d0d0d0;
+      transition: all 0.3s;
+    }
+    .dot.active {
+      background: var(--brand);
+      width: 18px;
+      border-radius: 4px;
+    }
+
+    #slide-counter {
+      font-size: 12px;
+      color: #999;
+      letter-spacing: 0.05em;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    /* ── TITLE SLIDE ── */
+    .title-layout {
+      position: relative; z-index: 2;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .title-content {
+      display: flex; flex-direction: column;
+      padding: 80px 56px 90px 72px;
+      justify-content: center;
+    }
+    .title-image { overflow: hidden; }
+    .title-image img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+    .title-logo-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 28px 72px;
+      z-index: 3;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .title-logo { height: 36px; }
+    .title-accent {
+      width: 48px; height: 3px;
+      background: var(--brand);
+      border-radius: 2px;
+      margin-bottom: 28px;
+    }
+    .title-eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--brand);
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .title-h1 {
+      font-size: clamp(32px, 4vw, 56px);
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--dark);
+      margin-bottom: 32px;
+    }
+    .title-h1 strong { font-weight: 700; }
+
+    /* ── CONTENT SLIDES ── */
+    .slide-inner {
+      height: 100%;
+      overflow-y: auto;
+      padding: 44px 72px 90px;
+      display: flex;
+      flex-direction: column;
+    }
+    .slide-inner::-webkit-scrollbar { display: none; }
+
+    .slide-logo-sm {
+      height: 26px;
+      margin-bottom: 32px;
+      opacity: 0.7;
+      align-self: flex-start;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--brand);
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .slide-h1 {
+      font-size: clamp(26px, 3vw, 42px);
+      font-weight: 400;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      color: var(--dark);
+      margin-bottom: 20px;
+    }
+    .slide-h1 strong { font-weight: 700; }
+
+    /* ── TABS ── */
+    .tab-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 8px 18px;
+      border-radius: 100px;
+      border: 1.5px solid #e0e0e0;
+      background: white;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(24,24,24,0.6);
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .tab-btn.active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: white;
+    }
+    .tab-panel { display: none; flex: 1; }
+    .tab-panel.active { display: flex; gap: 32px; align-items: flex-start; }
+
+    /* tab panel layout */
+    .tab-media {
+      flex: 0 0 380px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+    .tab-media img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: 16px;
+    }
+    .tab-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .tab-content h3 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+    .tab-content p {
+      font-size: 15px;
+      line-height: 1.65;
+      color: rgba(24,24,24,0.72);
+      margin: 0;
+    }
+
+    /* ── OFFER ITEM ── */
+    .offer-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid #eaeaea;
+    }
+    .offer-item:first-child { border-top: 1px solid #eaeaea; }
+    .offer-check {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .offer-text strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    .offer-text span {
+      font-size: 13px;
+      color: rgba(24,24,24,0.6);
+    }
+
+    /* ── STAT ── */
+    .stat-block {
+      background: #f0fafd;
+      border: 1px solid rgba(0,175,214,0.2);
+      border-radius: 20px;
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .stat-number {
+      font-size: clamp(36px, 4.5vw, 64px);
+      font-weight: 700;
+      color: var(--brand);
+      line-height: 1;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      min-width: 140px;
+      flex-shrink: 0;
+    }
+    .stat-label {
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--brand);
+      color: white;
+      padding: 13px 26px;
+      border-radius: 100px;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+      font-family: 'Roboto', sans-serif;
+    }
+    .cta-btn:hover { background: #0099bb; transform: translateY(-1px); }
+
+    /* ── PRICE CALCULATOR ── */
+    .calc-wrap {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      flex: 1;
+      min-height: 0;
+    }
+    .calc-form {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e5e5e5;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .calc-form::-webkit-scrollbar { display: none; }
+    .calc-result {
+      background: #f7f7f7;
+      border-radius: 16px;
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .calc-result::-webkit-scrollbar { display: none; }
+
+    .calc-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--brand);
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .gebiet-btn {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1.5px solid #e0e0e0;
+      background: white;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 6px;
+      width: 100%;
+      font-family: 'Roboto', sans-serif;
+      text-align: left;
+    }
+    .gebiet-btn.active {
+      border-color: var(--brand);
+      background: var(--brand);
+      color: white;
+    }
+    .gebiet-btn .radio-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gebiet-btn.active .radio-dot::after {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--yellow);
+    }
+    .gebiet-label { font-size: 13px; font-weight: 600; }
+    .gebiet-sub { font-size: 11px; opacity: 0.65; }
+
+    .beruf-card {
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .beruf-header {
+      background: #f7f7f7;
+      padding: 8px 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .beruf-body { padding: 10px 12px; }
+    .beruf-input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'Roboto', sans-serif;
+      margin-bottom: 8px;
+      outline: none;
+    }
+    .beruf-input:focus { border-color: var(--brand); }
+
+    .schulcard-row {
+      padding: 6px 8px;
+      background: var(--brand);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .schulcard-row span { font-size: 12px; color: white; font-weight: 600; }
+    .schulcard-dot { width: 10px; height: 10px; background: var(--yellow); border-radius: 2px; flex-shrink: 0; }
+
+    .addon-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1.5px solid #e8e8e8;
+      background: #fafafa;
+      cursor: pointer;
+      margin-bottom: 5px;
+      transition: all 0.15s;
+    }
+    .addon-row.checked { border-color: var(--brand); background: #f0fafd; }
+    .addon-check {
+      width: 14px; height: 14px;
+      border-radius: 3px;
+      border: 2px solid #ccc;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .addon-row.checked .addon-check {
+      background: var(--brand);
+      border-color: var(--brand);
+    }
+    .addon-label { font-size: 12px; font-weight: 600; color: var(--dark); }
+    .addon-sub { font-size: 11px; color: #888; margin-left: auto; }
+
+    .add-beruf-btn {
+      width: 100%;
+      padding: 9px;
+      border: 1.5px dashed #ccc;
+      border-radius: 8px;
+      background: none;
+      cursor: pointer;
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      font-family: 'Roboto', sans-serif;
+      transition: all 0.15s;
+    }
+    .add-beruf-btn:hover { border-color: var(--brand); color: var(--brand); }
+
+    .result-beruf-card {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e5e5e5;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .result-beruf-header {
+      background: var(--brand);
+      padding: 9px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .result-beruf-header span { color: white; font-weight: 700; font-size: 13px; }
+    .result-badge {
+      background: var(--yellow);
+      color: var(--dark);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .result-line {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .result-line:last-child { border-bottom: none; }
+    .result-line .amt { font-weight: 600; }
+    .result-total-box {
+      background: var(--yellow);
+      border-radius: 10px;
+      padding: 18px 20px;
+      color: var(--dark);
+    }
+    .result-total-label { font-size: 12px; color: rgba(24,24,24,0.6); margin-bottom: 2px; }
+    .result-total-amount { font-size: 22px; font-weight: 700; color: var(--dark); }
+
+    /* ── ANIMATION ── */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .slide.active .slide-inner > * {
+      animation: slideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .slide.active .slide-inner > *:nth-child(1) { animation-delay: 0.05s; }
+    .slide.active .slide-inner > *:nth-child(2) { animation-delay: 0.12s; }
+    .slide.active .slide-inner > *:nth-child(3) { animation-delay: 0.19s; }
+    .slide.active .slide-inner > *:nth-child(4) { animation-delay: 0.26s; }
+    .slide.active .slide-inner > *:nth-child(5) { animation-delay: 0.33s; }
+    .slide.active .slide-inner > *:nth-child(6) { animation-delay: 0.40s; }
+    .slide.active .title-content > * {
+      animation: slideIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .slide.active .title-content > *:nth-child(1) { animation-delay: 0.12s; }
+    .slide.active .title-content > *:nth-child(2) { animation-delay: 0.20s; }
+    .slide.active .title-content > *:nth-child(3) { animation-delay: 0.28s; }
+    .slide.active .title-content > *:nth-child(4) { animation-delay: 0.36s; }
+    .slide.active .title-content > *:nth-child(5) { animation-delay: 0.44s; }
+
+    /* audio player */
+    .audio-player {
+      background: #f0fafd;
+      border: 1px solid rgba(0,175,214,0.2);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .audio-player audio {
+      width: 100%;
+      height: 36px;
+      accent-color: var(--brand);
+    }
+    .audio-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* yt thumbnail */
+    .yt-thumb {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      display: block;
+      text-decoration: none;
+    }
+    .yt-thumb img { width: 100%; display: block; }
+    .yt-play {
+      position: absolute;
+      inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.3);
+      transition: background 0.2s;
+    }
+    .yt-thumb:hover .yt-play { background: rgba(0,0,0,0.45); }
+    .yt-play-btn {
+      width: 56px; height: 56px;
+      background: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    }
+    .yt-play-btn svg { margin-left: 4px; }
+
+    /* schulsuche slide */
+    .schulsuche-layout {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 40px;
+      flex: 1;
+      align-items: center;
+    }
+    .schulsuche-img {
+      border-radius: 20px;
+      overflow: hidden;
+      height: 300px;
+    }
+    .schulsuche-img img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    /* price comparison */
+    .price-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 8px;
+      flex: 1;
+    }
+    .compare-card {
+      border-radius: 20px;
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .compare-card.messe {
+      background: #fafafa;
+      border: 1.5px solid #e0e0e0;
+    }
+    .compare-card.det {
+      background: #f0fafd;
+      border: 1.5px solid rgba(0,175,214,0.3);
+    }
+    .compare-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #999;
+    }
+    .compare-card.det .compare-label { color: var(--brand); }
+    .compare-price {
+      font-size: clamp(36px, 4.5vw, 64px);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: #ccc;
+    }
+    .compare-card.det .compare-price { color: var(--brand); }
+    .compare-desc {
+      font-size: 14px;
+      color: rgba(24,24,24,0.6);
+      line-height: 1.5;
+    }
+    .compare-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--yellow);
+      color: var(--dark);
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 700;
+      width: fit-content;
+    }
+
+    /* kosten overview table */
+    .price-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .price-table thead tr {
+      background: var(--brand);
+    }
+    .price-table thead th {
+      padding: 9px 12px;
+      text-align: left;
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .price-table thead th:not(:first-child) { text-align: right; color: var(--yellow); }
+    .price-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+    .price-table tbody td { padding: 9px 12px; color: rgba(24,24,24,0.8); }
+    .price-table tbody td:not(:first-child) { text-align: right; font-weight: 600; }
+    .price-table tfoot tr { background: var(--dark); }
+    .price-table tfoot td { padding: 11px 12px; color: white; font-weight: 700; font-size: 13px; }
+    .price-table tfoot td:not(:first-child) { text-align: right; color: var(--yellow); }
+    .price-note { font-size: 11px; color: #999; margin-top: 6px; }
+
+    /* wireframe badge */
+    .wireframe-wrap {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .wireframe-badge {
+      position: absolute;
+      top: 12px; left: 12px;
+      background: var(--yellow);
+      color: var(--dark);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 100px;
+    }
+
+    /* coming soon badge */
+    .coming-soon-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,175,214,0.1);
+      color: var(--brand);
+      border: 1px solid rgba(0,175,214,0.3);
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      width: fit-content;
+    }
+
+    /* phone mockup (Medienbox-Stationen) */
+    .phone-mockup { position: relative; border: 10px solid #181818; border-radius: 2.5rem; background: #181818; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.45); overflow: hidden; }
+    .phone-mockup::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 38%; height: 16px; background: #181818; border-radius: 0 0 10px 10px; z-index: 10; }
+    .phone-mockup video, .phone-mockup img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .feed-track { display: flex; flex-direction: column; gap: 3px; animation: feedScroll 22s linear infinite; }
+    @keyframes feedScroll { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar" style="width:7.7%"></div>
+
+<div id="stage">
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 1 – TITEL
+  ══════════════════════════════════════════ -->
+  <div class="slide active" id="slide-0" data-dark="false">
+    <div class="title-logo-bar">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="title-logo" />
+      <span style="font-size:20px;color:#bbb;font-weight:300;line-height:1;">×</span>
+      <img src="{{CUSTOMER_LOGO_SRC}}" alt="{{CUSTOMER_LOGO_ALT}}" class="title-logo" />
+    </div>
+
+    <div class="title-layout">
+      <div class="title-content">
+        <div class="title-accent"></div>
+
+        <h1 class="title-h1">
+          Ihr nächster Azubi sitzt<br>in einer Schulklasse.<br><strong>Wir bringen Sie dorthin.</strong>
+        </h1>
+
+        <p style="font-size:15px;color:rgba(24,24,24,0.55);margin-bottom:28px;line-height:1.5;margin-top:-8px;">Im größten Schulprogramm für Berufsorientierung in Deutschland.</p>
+
+        <div>
+          <button class="cta-btn" onclick="goTo(1)">
+            Los geht's
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="title-image">
+        <img src="Girl with VR.jpg" alt="Schülerin mit VR-Brille" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 2 – MEDIENFORMATE (TABS)
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-1" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Phase 1 · Medienproduktion</div>
+      <h1 class="slide-h1" style="margin-bottom:8px;">Für Ihre Berufe <strong>begeistern.</strong></h1>
+      <p style="font-size:15px;color:rgba(24,24,24,0.55);line-height:1.5;margin-bottom:20px;">Sie wählen das Medium, das am besten zu Ihnen passt.</p>
+
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('tabs-medien', 'tab-sn', this)">Sprachnachricht + Mini-Games</button>
+        <button class="tab-btn" onclick="switchTab('tabs-medien', 'tab-ke', this)">#kurzerklärt</button>
+        <button class="tab-btn" onclick="switchTab('tabs-medien', 'tab-vr', this)">360°-Rundgang</button>
+      </div>
+
+      <div id="tabs-medien" style="flex:1;min-height:0;overflow-y:auto;">
+
+        <!-- Tab 1: Schulcard (iframe is positioned absolutely on the right) -->
+        <div id="tab-sn" class="tab-panel active">
+          <div class="tab-content" style="max-width:360px;">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div class="offer-item" style="border-top:1px solid #eaeaea;">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Sprachnachricht von Ihren Azubis oder KI-generiert</strong><span>Authentisch und direkt erlebbar</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Mini-Games zum Beruf entdecken</strong><span>Spielerisch und einprägsam</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Info-Kategorien, die Schüler*innen wirklich interessieren</strong><span>Gehalt, Alltag, Aufgaben – auf den Punkt</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Prominente Platzierung der Arbeitgebermarke</strong><span>Ihr Logo und Branding sichtbar präsent</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: #kurzerklärt -->
+        <div id="tab-ke" class="tab-panel">
+          <div class="tab-media" style="flex:0 0 360px;height:240px;background:#000;">
+            <iframe src="https://www.youtube.com/embed/uGsxUGgQpBY?rel=0&modestbranding=1" style="width:100%;height:100%;border:none;border-radius:16px;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+          <div class="tab-content">
+            <h3>#kurzerklärt</h3>
+            <p>Mit <strong>#kurzerklärt</strong> präsentieren wir einen Ausbildungsberuf auf unterhaltsame, moderne und kompakte Weise. Wir übernehmen den gesamten Produktionsprozess – vom Kickoff über das Drehbuch bis hin zu Schnitt und Vertonung.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+              <div class="offer-item" style="border-top:1px solid #eaeaea;">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Vollständige Produktion durch uns</strong><span>Kickoff · Drehbuch · Dreh · Schnitt</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Unbegrenzte Nutzungsrechte</strong><span>Messen · Website · Social Media · Events</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: 360° -->
+        <div id="tab-vr" class="tab-panel">
+          <div class="tab-media" style="flex:0 0 360px;height:240px;background:#000;">
+            <iframe src="https://www.youtube.com/embed/zwiAASX8YH0?rel=0&modestbranding=1" style="width:100%;height:100%;border:none;border-radius:16px;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+          <div class="tab-content">
+            <h3>360°-Rundgang</h3>
+            <p>Mit einem aufregenden <strong>360-Grad-Rundgang</strong> geben Sie Schüler*innen authentische Einblicke in Ihre Ausbildungs- und Betriebsräume – immersiv und unvergesslich.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+              <div class="offer-item" style="border-top:1px solid #eaeaea;">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Virtuelle Betriebsbesichtigung</strong><span>Schüler*innen erleben Ihren Betrieb hautnah</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Unbegrenzte Nutzungsrechte</strong><span>Auch für VR-Brillen auf Messen nutzbar</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <!-- Schulcard: rechts, oben bündig mit Headline -->
+    <div id="schulcard-iframe-panel" style="position:absolute;top:128px;left:560px;right:44px;bottom:88px;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5;z-index:5;">
+      <iframe src="{{SCHULCARD_SRC}}" style="width:100%;height:100%;border:none;" frameborder="0"></iframe>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 3.1 – MEDIENBOX (5 STATIONEN)
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-2" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Phase 2 · Schulvermarktung · Medienbox</div>
+      <h1 class="slide-h1">Und so geht's an die Schule: <strong>Die Medienbox.</strong></h1>
+      <p style="font-size:15px;color:rgba(24,24,24,0.6);line-height:1.5;margin-top:-10px;margin-bottom:20px;">Schulen holen sich die spannendste Berufsmesse direkt in ihre Klassenzimmer. Kostenlos für 7 Tage.</p>
+
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('tabs-medienbox', 'mb-s1', this)">Station 1: Mini-Games</button>
+        <button class="tab-btn" onclick="switchTab('tabs-medienbox', 'mb-s2', this)">Station 2: Azubi-Chat</button>
+        <button class="tab-btn" onclick="switchTab('tabs-medienbox', 'mb-s3', this)">Station 3: Kurzfilm-Kino</button>
+        <button class="tab-btn" onclick="switchTab('tabs-medienbox', 'mb-s4', this)">Station 4: 360-Grad-Rundgänge erleben</button>
+        <button class="tab-btn" onclick="switchTab('tabs-medienbox', 'mb-s5', this)">Station 5: AR-Gamecards</button>
+      </div>
+
+      <div id="tabs-medienbox" style="flex:1;min-height:0;overflow-y:auto;">
+
+        <!-- Station 1: Mini-Games -->
+        <div id="mb-s1" class="tab-panel active">
+          <div class="tab-media" style="height:320px;display:flex;align-items:center;justify-content:center;">
+            <div class="phone-mockup" style="width:150px;height:312px;">
+              <video src="Mini_Games_NEU.mp4" autoplay muted loop playsinline></video>
+            </div>
+          </div>
+          <div class="tab-content">
+            <h3>Mini-Games</h3>
+            <p>Kurzweilige <strong>Klick-Games</strong> zum Entdecken von Berufen und Arbeitgebern – spielerisch, einprägsam, interaktiv.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+              <div class="offer-item" style="border-top:1px solid #eaeaea;">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Hohe Verweildauer</strong><span>Spielerisch den Beruf entdecken – ohne Langeweile</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Starker Erinnerungswert</strong><span>Gamification verankert Ihren Beruf und Ihre Arbeitgebermarke im Gedächtnis</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Station 2: Azubi-Chat -->
+        <div id="mb-s2" class="tab-panel">
+          <div class="tab-media" style="height:320px;display:flex;align-items:center;justify-content:center;">
+            <div class="phone-mockup" style="width:150px;height:312px;">
+              <video src="Azubi_Chat_NEU.mp4" autoplay muted loop playsinline></video>
+            </div>
+          </div>
+          <div class="tab-content">
+            <h3>Azubi-Chat</h3>
+            <p>Eintauchen in einen (fiktiven) <strong>Azubi-Gruppenchat</strong> mit einem Azubi-Avatar aus Ihrem Unternehmen – nah, authentisch und direkt.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+              <div class="offer-item" style="border-top:1px solid #eaeaea;">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Persönliche Perspektive</strong><span>Schüler*innen erleben den Alltag durch Azubi-Augen</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Ihr Azubi-Avatar</strong><span>Individuell auf Ihr Unternehmen zugeschnitten</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Station 3: Kurzfilm-Kino -->
+        <div id="mb-s3" class="tab-panel">
+          <div class="tab-media" style="height:320px;display:flex;align-items:center;justify-content:center;">
+            <div class="phone-mockup" style="width:150px;height:312px;">
+              <div style="width:100%;height:100%;background:#fff;overflow:hidden;">
+                <div class="feed-track">
+                  <img src="Thumbnail YT 1.png" alt="Kurzfilm-Kino Beispiel 1" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 2.png" alt="Kurzfilm-Kino Beispiel 2" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 3.png" alt="Kurzfilm-Kino Beispiel 3" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 4.png" alt="Kurzfilm-Kino Beispiel 4" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 5.png" alt="Kurzfilm-Kino Beispiel 5" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 6.png" alt="Kurzfilm-Kino Beispiel 6" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 7.png" alt="Kurzfilm-Kino Beispiel 7" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 8.png" alt="Kurzfilm-Kino Beispiel 8" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 1.png" alt="" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 2.png" alt="" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 3.png" alt="" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 4.png" alt="" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 5.png" alt="" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 6.png" alt="" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 7.png" alt="" style="width:100%;height:auto;display:block;" />
+                  <img src="Thumbnail YT 8.png" alt="" style="width:100%;height:auto;display:block;" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-content">
+            <h3>Kurzfilm-Kino</h3>
+            <p><strong>#kurzerklärt</strong> im Videofeed. Direkt im Klassenraum – kurz, unterhaltsam, auf den Punkt.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+              <div class="offer-item" style="border-top:1px solid #eaeaea;">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Modernes Videoformat</strong><span>Kurz, authentisch und auf Schüler*innen zugeschnitten</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Kein Internet nötig</strong><span>Inhalte laufen offline direkt aus der Box</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Station 4: 360-Grad-Rundgänge erleben -->
+        <div id="mb-s4" class="tab-panel">
+          <div class="tab-media" style="height:320px;background:#000;position:relative;cursor:pointer;" onclick="playFacade(this, 'OZZjn3BEouU')">
+            <img src="VR Magic.png" alt="360° erleben" style="width:100%;height:100%;object-fit:cover;" />
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+              <div style="width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="tab-content">
+            <h3>360° erleben</h3>
+            <p>Mit unseren mitgelieferten <strong>VR-Brillen</strong> erleben Jugendliche Ihren Beruf hautnah – direkt im Klassenzimmer, ohne Betriebsbesuch.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+              <div class="offer-item" style="border-top:1px solid #eaeaea;">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>VR-Brillen inklusive</strong><span>Mitgeliefert in der Medienbox – keine Zusatzkosten</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Immersives Berufserlebnis</strong><span>Schüler*innen tauchen direkt in Ihren Arbeitsalltag ein</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Station 5: AR-Gamecards -->
+        <div id="mb-s5" class="tab-panel">
+          <div class="tab-media" style="height:320px;display:flex;align-items:center;justify-content:center;">
+            <div class="phone-mockup" style="width:150px;height:312px;">
+              <video src="AR.mp4" autoplay muted loop playsinline></video>
+            </div>
+          </div>
+          <div class="tab-content">
+            <div class="coming-soon-badge">✦ Coming Soon</div>
+            <h3>AR-Gamecards</h3>
+            <p>Gamecards scannen – und Schüler*innen können mit Ihrem <strong>3D-Avatar interagieren</strong>. Die Gamecard nehmen sie als Visitenkarte mit nach Hause.</p>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+              <div class="offer-item" style="border-top:1px solid #eaeaea;">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Augmented Reality</strong><span>Ihr 3D-Avatar erwacht direkt auf der Karte zum Leben</span></div>
+              </div>
+              <div class="offer-item">
+                <div class="offer-check">✓</div>
+                <div class="offer-text"><strong>Visitenkarte zum Mitnehmen</strong><span>Bleibendes Erinnerungsstück aus dem Unterricht</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 3.2 – VIDEOSTUNDE
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-3" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Phase 2 · Schulvermarktung · Videostunde</div>
+      <h1 class="slide-h1">Die <strong>Videostunde.</strong></h1>
+      <p style="font-size:15px;color:rgba(24,24,24,0.6);line-height:1.5;margin-top:-10px;margin-bottom:0;">Spannende Berufsorientierung mit nur einem Klick. Direkt vom Smartboard.</p>
+
+      <div style="display:flex;gap:40px;flex:1;align-items:flex-start;margin-top:8px;">
+        <div style="flex:0 0 380px;display:flex;flex-direction:column;gap:10px;">
+          <div class="tab-media" style="height:240px;">
+            <img src="https://www.deinerstertag.de/wp-content/uploads/Videostunde-Titelbild-360-1-Praktisch_Technisch-modified-1536x952.jpg" alt="Videostunde" style="border-radius:16px;width:100%;height:100%;object-fit:cover;" />
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <svg width="40" height="36" viewBox="0 0 40 36" fill="none" style="flex-shrink:0;margin-top:10px;"><path d="M8 4 C8 4, 4 20, 32 24" stroke="var(--brand)" stroke-width="2.5" stroke-linecap="round" fill="none"/><polygon points="28,16 38,24 28,30" fill="var(--brand)"/></svg>
+            <div style="background:var(--yellow);border-radius:12px;padding:12px 16px;font-size:13px;line-height:1.6;flex:1;">
+              <strong>Übrigens:</strong> Das ist Samir Salim. Er übernimmt die Moderation. Bei der Zielgruppe ist er bekannt durch seine Hauptrolle in „Softies" (RTL) und bald in einer neuen Staffel „4 Blocks".
+            </div>
+          </div>
+        </div>
+        <div class="tab-content">
+          <h3>Die Videostunde</h3>
+          <p>Die Lehrkraft startet die Unterrichtseinheit am Smartboard – <strong>für 45 Minuten übernehmen wir den Unterricht</strong>. Schüler*innen sehen regionalisierte Filme von Ausbildungsbetrieben aus ihrer Umgebung und bearbeiten passende Aufgaben.</p>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+            <div class="offer-item" style="border-top:1px solid #eaeaea;">
+              <div class="offer-check">✓</div>
+              <div class="offer-text"><strong>Kein Aufwand für die Lehrkraft</strong><span>Keine Vorbereitung, keine extra Technik</span></div>
+            </div>
+            <div class="offer-item">
+              <div class="offer-check">✓</div>
+              <div class="offer-text"><strong>Regionalisierte Inhalte</strong><span>Betriebe aus der direkten Umgebung der Schüler*innen</span></div>
+            </div>
+            <div class="offer-item">
+              <div class="offer-check">✓</div>
+              <div class="offer-text"><strong>Interaktiv</strong><span>Die Schüler*innen lösen Aufgaben und arbeiten aktiv mit</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 3.3 – ARBEITSAGENTUREN
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-4" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Phase 2 · Schulvermarktung · Bundesagentur für Arbeit</div>
+      <h1 class="slide-h1">Ihr Medium in der <strong>staatlichen Berufsberatung!</strong></h1>
+      <p style="font-size:15px;color:rgba(24,24,24,0.6);line-height:1.5;margin-top:-10px;margin-bottom:0;">Die Berufsberater*innen der regionalen Arbeitsagentur setzen Ihre Videos ebenfalls ein.</p>
+
+      <div style="display:flex;gap:40px;flex:1;align-items:flex-start;margin-top:8px;">
+        <div class="tab-media" style="flex:0 0 380px;height:280px;">
+          <img src="Berufsberatung.jpg" alt="Berufsberatung Arbeitsagentur" style="border-radius:16px;width:100%;height:100%;object-fit:cover;" />
+        </div>
+        <div class="tab-content">
+          <h3>Kooperation mit der Bundesagentur für Arbeit</h3>
+          <p>Über <strong>50 % der regionalen Agenturen für Arbeit</strong> nutzen unsere Inhalte bereits in der Berufsberatung. Ihr Ausbildungsberuf ist damit auch im offiziellen Beratungsgespräch präsent.</p>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+            <div class="offer-item" style="border-top:1px solid #eaeaea;">
+              <div class="offer-check">✓</div>
+              <div class="offer-text"><strong>Präsenz im Beratungsgespräch</strong><span>Direkt beim entscheidenden Moment der Berufswahl</span></div>
+            </div>
+            <div class="offer-item">
+              <div class="offer-check">✓</div>
+              <div class="offer-text"><strong>Auf den Ständen der Agenturen auf Schülermessen vertreten</strong><span>Sichtbarkeit genau dort, wo Berufswahl stattfindet</span></div>
+            </div>
+            <div class="offer-item">
+              <div class="offer-check">✓</div>
+              <div class="offer-text"><strong>Automatisch inkludiert</strong><span>Kein zusätzlicher Aufwand Ihrerseits</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 4 – SCHULEN IN IHRER REGION
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-5" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Ihr Einzugsgebiet</div>
+      <h1 class="slide-h1">Schulen <strong>in Ihrer Region.</strong></h1>
+      <p style="font-size:16px;line-height:1.6;color:rgba(24,24,24,0.7);max-width:600px;margin-bottom:24px;">
+        Lassen Sie uns gemeinsam schauen, welche Schulen aus Ihrer Region schon bei uns mitmachen.
+      </p>
+
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:32px;flex:1;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="stat-block" style="padding:20px 24px;">
+            <div class="stat-number" style="font-size:clamp(28px,3.5vw,52px);min-width:100px;">8.800</div>
+            <div class="stat-label">
+              <strong style="font-weight:600;display:block;margin-bottom:3px;">Partnerschulen in Deutschland</strong>
+              <span style="font-size:14px;color:rgba(24,24,24,0.6);">Davon viele sicher auch in Ihrer Region.</span>
+            </div>
+          </div>
+          <a href="https://www.deinerstertag.de/schulsuche/" target="_blank" class="cta-btn" style="align-self:flex-start;width:fit-content;">
+            Schulen in meiner Region suchen
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+        <div style="border-radius:20px;overflow:hidden;">
+          <img src="Schulkarte.png" alt="Schulen in Deutschland" style="width:100%;height:100%;object-fit:contain;" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 5 – ERFOLGSMESSUNG
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-6" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Erfolgsmessung</div>
+      <h1 class="slide-h1">Was kostet ein<br><strong>Schülerkontakt wirklich?</strong></h1>
+
+      <div class="price-compare">
+        <div class="compare-card messe" style="align-self:start;">
+          <div class="compare-label">Schülermesse</div>
+          <div class="compare-price" style="font-size:clamp(28px,3.2vw,52px);">20 – 110 €</div>
+          <div class="compare-desc">pro erreichtem Schüler oder erreichter Schülerin — Standgebühr, Anreise, Personal und Ausfallzeit eingerechnet.</div>
+        </div>
+
+        <div class="compare-card det">
+          <div class="compare-label">DEIN ERSTER TAG</div>
+          <div class="compare-price" style="font-size:clamp(28px,3.2vw,52px);">4 – 8 €</div>
+          <div class="compare-desc">pro Schüler-Kontakt — ganzjährige Präsenz an Schulen in Ihrer Region mit messbaren Ergebnissen und transparentem Reporting.</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+            <div style="font-size:13px;color:var(--brand);display:flex;align-items:center;gap:6px;">
+              <span>✓</span> Quartalsweises Reporting
+            </div>
+            <div style="font-size:13px;color:var(--brand);display:flex;align-items:center;gap:6px;">
+              <span>✓</span> 365 Tage im Jahr präsent
+            </div>
+            <div style="font-size:13px;color:var(--brand);display:flex;align-items:center;gap:6px;">
+              <span>✓</span> Schüler-Kontaktpreis transparent ausgewiesen
+            </div>
+          </div>
+          <div class="compare-tag">
+            🏆 Das günstigste Reichweiten-Tool für Azubi-Schulmarketing
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE – JOBAPP
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-jobapp-a" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Bonus · JobApp</div>
+      <h1 class="slide-h1">Employer Branding – <strong>von Klasse 7 bis zum Abschluss.</strong></h1>
+
+      <div style="display:flex;gap:40px;flex:1;align-items:flex-start;margin-top:8px;">
+        <div style="flex:0 0 340px;border-radius:16px;overflow:hidden;height:280px;background:#f8f8f8;">
+          <img src="jobapp.png" alt="JobApp" style="width:100%;height:100%;object-fit:contain;display:block;" />
+        </div>
+        <div class="tab-content">
+          <p>Das Schulprogramm schafft <strong>nachhaltig</strong> Bekanntheit und Begeisterung. Die JobApp sorgt bei Abschlussklassen dafür, dass aus Interesse eine Bewerbung wird – nahtlos, ohne Medienbruch.</p>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px;">
+            <div class="offer-item" style="border-top:1px solid #eaeaea;">
+              <div class="offer-check">✓</div>
+              <div class="offer-text"><strong>Durchgängige Präsenz</strong><span>Von der Berufsorientierung in Klasse 7 bis zum Schulabschluss</span></div>
+            </div>
+            <div class="offer-item">
+              <div class="offer-check">✓</div>
+              <div class="offer-text"><strong>Ein Beruf auf der JobApp – im Paket enthalten</strong><span>Kein zusätzlicher Aufwand, kein Aufpreis, direkte Bewerbungsoption</span></div>
+            </div>
+            <div class="offer-item">
+              <div class="offer-check">✓</div>
+              <div class="offer-text"><strong>Kein Medienbruch für Schüler*innen</strong><span>Nahtloser Übergang vom Entdecken zum Bewerben</span></div>
+            </div>
+          </div>
+          <div style="background:var(--yellow);border-radius:14px;padding:16px 20px;margin-top:16px;font-size:14px;line-height:1.6;">
+            Wir sehen uns als nachhaltiges Employer Branding-Instrument an Schulen – nicht als weitere Jobbörse. Trotzdem ermöglichen wir Schüler*innen in Abschlussklassen eine nahtlose Customer Journey.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE – UPGRADES
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-upgrades-a" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Optional · Upgrades</div>
+      <h1 class="slide-h1">Noch mehr <strong>Wirkung.</strong></h1>
+      <p style="font-size:15px;color:rgba(24,24,24,0.55);margin-bottom:20px;margin-top:-10px;">Mit unseren Upgrades.</p>
+
+      <div style="display:flex;gap:32px;flex:1;min-height:0;align-items:stretch;">
+        <div style="flex:0 0 220px;border-radius:16px;overflow:hidden;background:#000;">
+          <iframe src="https://www.youtube.com/embed/QowVfjocyUI?rel=0&modestbranding=1" style="width:100%;height:100%;border:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:14px;">
+          <div style="background:var(--yellow);border-radius:16px;padding:20px 24px;">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--dark);margin-bottom:8px;">Alle Berufe darstellen</div>
+            <p style="font-size:14px;line-height:1.6;color:rgba(24,24,24,0.75);margin:0;">Wir erstellen für jeden Ihrer Ausbildungsberufe eine eigene Schulcard – und vermarkten alle gleichzeitig in Schulen Ihrer Region.</p>
+          </div>
+          <div style="background:var(--yellow);border-radius:16px;padding:20px 24px;">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--dark);margin-bottom:8px;">Bewerbungen übertragen</div>
+            <p style="font-size:14px;line-height:1.6;color:rgba(24,24,24,0.75);margin:0;">Bewerbungen aus der JobApp landen direkt in Ihrem Bewerbungsmanagementsystem – ohne manuellen Aufwand.</p>
+          </div>
+          <div style="background:var(--yellow);border-radius:16px;padding:20px 24px;">
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--dark);margin-bottom:8px;">Hardware für Messen &amp; Events</div>
+            <p style="font-size:14px;line-height:1.6;color:rgba(24,24,24,0.75);margin:0;">VR-Brillen oder Touchscreens kaufen, einrichten und mit Ihren Filmen bespielen – inklusive zweijähriger Gewährleistung.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 6 – KOSTEN ÜBERSICHT
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-7" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Kosten · Übersicht</div>
+      <h1 class="slide-h1">Unser <strong>Angebot</strong></h1>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;flex:1;align-content:start;margin-top:4px;">
+
+        <div>
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand);margin-bottom:8px;">Produktionskosten (einmalig pro Beruf)</div>
+          <table class="price-table">
+            <thead>
+              <tr>
+                <th>Format</th>
+                <th style="text-align:right;color:var(--yellow);">Einmalig</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Schulcard + Sprachnachricht + Mini-Games</td>
+                <td style="text-align:right;">inklusive</td>
+              </tr>
+              <tr>
+                <td>Augmented Reality-Avatar</td>
+                <td style="text-align:right;">1.500 €</td>
+              </tr>
+              <tr>
+                <td>#kurzerklärt</td>
+                <td style="text-align:right;">4.900 €</td>
+              </tr>
+              <tr>
+                <td>360°-Rundgang</td>
+                <td style="text-align:right;">14.900 €</td>
+              </tr>
+              <tr>
+                <td>JobApp (1 Beruf)</td>
+                <td style="text-align:right;color:var(--brand);font-weight:600;">inklusive</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="background:var(--yellow);border-radius:12px;padding:12px 16px;font-size:13px;line-height:1.6;margin-top:10px;">
+            Nutzungsrechte an allen produzierten Medien inklusive. Alle Preise zzgl. MwSt.
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--brand);margin-bottom:8px;">Schulvermarktung (pro Jahr / pro Beruf)</div>
+          <table class="price-table">
+            <thead>
+              <tr>
+                <th>Format</th>
+                <th>Regional</th>
+                <th>Bundesland</th>
+                <th>D-weit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Schulcard (Basis)</td>
+                <td>3.000 €</td>
+                <td>4.500 €</td>
+                <td>6.000 €</td>
+              </tr>
+              <tr>
+                <td>+ Augmented Reality-Avatar</td>
+                <td>1.500 €</td>
+                <td>3.000 €</td>
+                <td>4.500 €</td>
+              </tr>
+              <tr>
+                <td>+ #kurzerklärt</td>
+                <td>1.500 €</td>
+                <td>3.000 €</td>
+                <td>4.500 €</td>
+              </tr>
+              <tr>
+                <td>+ 360°-Rundgang</td>
+                <td>1.500 €</td>
+                <td>3.000 €</td>
+                <td>4.500 €</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="price-note">* Ab dem 2. Beruf: −1.500 € Rabatt auf die Schulcard-Vermarktung.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 7 – PREISRECHNER
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-8" data-dark="false">
+    <div class="slide-inner" style="padding-bottom:80px;">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Kosten · Ihr individuelles Angebot</div>
+      <h1 class="slide-h1" style="margin-bottom:12px;">Unser <strong>Preiskalkulator.</strong></h1>
+
+      <div class="calc-wrap">
+        <!-- Form -->
+        <div class="calc-form">
+
+          <div class="calc-section-title">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--brand);color:white;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>
+            Berufe &amp; Formate
+          </div>
+
+          <div id="berufe-list"></div>
+
+          <button class="add-beruf-btn" onclick="addBeruf()">+ Weiteren Beruf hinzufügen</button>
+
+          <div style="height:1px;background:#f0f0f0;margin:14px 0;"></div>
+
+          <div class="calc-section-title">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--brand);color:white;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>
+            Vermarktungsgebiet
+          </div>
+          <div id="gebiet-btns">
+            <button class="gebiet-btn active" onclick="setGebiet('regional', this)">
+              <div class="radio-dot"></div>
+              <div><div class="gebiet-label">Regional</div><div class="gebiet-sub">50 km Umkreis</div></div>
+            </button>
+            <button class="gebiet-btn" onclick="setGebiet('bundesland', this)">
+              <div class="radio-dot"></div>
+              <div><div class="gebiet-label">Bundesland</div><div class="gebiet-sub">1 Bundesland</div></div>
+            </button>
+            <button class="gebiet-btn" onclick="setGebiet('deutschland', this)">
+              <div class="radio-dot"></div>
+              <div><div class="gebiet-label">Deutschlandweit</div><div class="gebiet-sub">Gesamtes Bundesgebiet</div></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Result -->
+        <div class="calc-result" id="calc-result">
+          <div style="font-size:15px;font-weight:700;color:var(--dark);margin-bottom:16px;">Preisübersicht</div>
+          <div id="result-berufe"></div>
+          <div id="result-total" style="display:none;"></div>
+          <div id="result-empty" style="color:#bbb;font-size:14px;text-align:center;margin-top:40px;">
+            Berufe konfigurieren und Gebiet wählen →
+          </div>
+        </div>
+      </div>
+      <p style="font-size:11px;color:#aaa;margin-top:10px;">* Alle Preise verstehen sich netto zzgl. MwSt.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 8 – NÄCHSTE SCHRITTE
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-9" data-dark="false">
+    <div class="slide-inner">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <div class="eyebrow">Nächste Schritte</div>
+      <h1 class="slide-h1">Wie möchten<br><strong>wir verbleiben?</strong></h1>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;max-width:680px;">
+        <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--yellow);border-radius:14px;">
+          <div style="width:30px;height:30px;border-radius:50%;background:var(--dark);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">1</div>
+          <div style="font-size:15px;font-weight:500;">Ich sende Ihnen alle Informationen noch einmal per E-Mail zu.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--yellow);border-radius:14px;">
+          <div style="width:30px;height:30px;border-radius:50%;background:var(--dark);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">2</div>
+          <div style="font-size:15px;font-weight:500;">Auf Wunsch schicken wir Ihnen gerne eine <strong>VR-Brille zum Testen</strong> zu.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--yellow);border-radius:14px;">
+          <div style="width:30px;height:30px;border-radius:50%;background:var(--dark);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">3</div>
+          <div style="font-size:15px;font-weight:500;">Wir vereinbaren einen Follow-up-Termin. <strong>Wann passt es Ihnen?</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FOLIE 9 – ABSCHLUSS
+  ══════════════════════════════════════════ -->
+  <div class="slide" id="slide-10" data-dark="false">
+    <div class="slide-inner" style="justify-content:center;">
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+
+      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:24px;margin-top:8px;">
+        <div style="width:120px;height:120px;border-radius:50%;overflow:hidden;border:3px solid var(--brand);">
+          <img src="{{CONTACT_PHOTO_SRC}}" alt="{{CONTACT_NAME}}" style="width:100%;height:100%;object-fit:cover;" />
+        </div>
+
+        <h2 style="font-size:clamp(28px,3.5vw,48px);font-weight:400;letter-spacing:-0.03em;margin:0;">Ich bin gerne <strong>für Sie da.</strong></h2>
+
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:16px;color:rgba(24,24,24,0.75);">
+          <div style="font-weight:600;font-size:18px;color:var(--dark);">{{CONTACT_NAME}}</div>
+          <div>{{CONTACT_PHONE}}</div>
+          <div><a href="mailto:{{CONTACT_EMAIL}}" style="color:var(--brand);text-decoration:none;">{{CONTACT_EMAIL}}</a></div>
+        </div>
+
+        {{CONTACT_CALENDLY_BLOCK}}
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #stage -->
+
+<!-- ══════════════════════════════════════════
+     NAVIGATION
+══════════════════════════════════════════ -->
+<div id="nav">
+  <button class="nav-btn hidden-btn" id="btn-back" aria-label="Zurück">‹</button>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div class="dot-row" id="dot-row"></div>
+    <div id="slide-counter">1 / 11</div>
+  </div>
+  <button class="nav-btn primary hidden-btn" id="btn-next" aria-label="Weiter">›</button>
+</div>
+
+<script>
+// ── NAVIGATION ──────────────────────────────────
+const SLIDES = document.querySelectorAll('.slide');
+const btnBack = document.getElementById('btn-back');
+const btnNext = document.getElementById('btn-next');
+const dotRow  = document.getElementById('dot-row');
+const counter = document.getElementById('slide-counter');
+const progressBar = document.getElementById('progress-bar');
+const TOTAL = SLIDES.length;
+let current = 0;
+
+for (let i = 0; i < TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  dotRow.appendChild(d);
+}
+
+function goTo(idx) {
+  if (idx < 0 || idx >= TOTAL) return;
+  SLIDES[current].classList.remove('active');
+  SLIDES[current].classList.add('prev');
+  setTimeout(() => SLIDES[current].classList.remove('prev'), 550);
+  current = idx;
+  SLIDES[current].classList.add('active');
+  dotRow.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  counter.textContent = `${current + 1} / ${TOTAL}`;
+  progressBar.style.width = ((current + 1) / TOTAL * 100) + '%';
+  btnBack.classList.toggle('hidden-btn', current === 0);
+  btnNext.classList.toggle('hidden-btn', current === 0);
+  btnNext.innerHTML = current === TOTAL - 1 ? '✓' : '›';
+  btnNext.style.fontSize = current === TOTAL - 1 ? '16px' : '20px';
+}
+
+btnNext.addEventListener('click', () => goTo(current + 1));
+btnBack.addEventListener('click', () => goTo(current - 1));
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     { e.preventDefault(); goTo(current - 1); }
+});
+let touchStartX = null, touchStartY = null;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (touchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) dx < 0 ? goTo(current + 1) : goTo(current - 1);
+  touchStartX = null;
+}, { passive: true });
+
+// ── MEDIENBOX VIDEO FACADE ───────────────────────
+function playFacade(el, videoId) {
+  el.innerHTML = '<iframe src="https://www.youtube.com/embed/' + videoId + '?rel=0&modestbranding=1&autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:none;display:block;"></iframe>';
+}
+
+// ── TABS ────────────────────────────────────────
+function switchTab(containerId, panelId, btn) {
+  const container = document.getElementById(containerId);
+  container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+  btn.closest('.tab-row').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const sc = document.getElementById('schulcard-iframe-panel');
+  if (sc) sc.style.display = panelId === 'tab-sn' ? 'block' : 'none';
+}
+
+// ── PRICING CALCULATOR ──────────────────────────
+const PRICES = {
+  schulcard: { regional: 3000, bundesland: 4500, deutschland: 6000 },
+  addon:     { regional: 1500, bundesland: 3000, deutschland: 4500 },
+  prod:      { ke: 4900, vr: 14900, ar: 1500 }
+};
+
+let gebiet = 'regional';
+let berufe = [{ id: 1, name: '', ke: false, vr: false, ar: false }];
+let nextId = 2;
+
+function setGebiet(g, btn) {
+  gebiet = g;
+  document.querySelectorAll('.gebiet-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCalc();
+}
+
+function addBeruf() {
+  berufe.push({ id: nextId++, name: '', ke: false, vr: false, ar: false });
+  renderBerufeForm();
+  renderCalc();
+}
+
+function removeBeruf(id) {
+  berufe = berufe.filter(b => b.id !== id);
+  renderBerufeForm();
+  renderCalc();
+}
+
+function toggleAddon(id, key) {
+  const b = berufe.find(b => b.id === id);
+  if (b) { b[key] = !b[key]; renderBerufeForm(); renderCalc(); }
+}
+
+function updateName(id, val) {
+  const b = berufe.find(b => b.id === id);
+  if (b) b.name = val;
+}
+
+function fmt(n) {
+  return n.toLocaleString('de-DE') + ' €';
+}
+
+function renderBerufeForm() {
+  const container = document.getElementById('berufe-list');
+  container.innerHTML = berufe.map((b, i) => `
+    <div class="beruf-card">
+      <div class="beruf-header">
+        <span>Beruf ${i + 1}${i > 0 ? ' <span style="background:var(--yellow);color:var(--dark);padding:1px 6px;border-radius:10px;font-size:10px;">−1.500 € Rabatt</span>' : ''}</span>
+        ${berufe.length > 1 ? `<button onclick="removeBeruf(${b.id})" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:16px;padding:0;line-height:1;">×</button>` : ''}
+      </div>
+      <div class="beruf-body">
+        <input class="beruf-input" type="text" placeholder="Berufsbezeichnung (optional)"
+          value="${b.name}" onchange="updateName(${b.id}, this.value)" />
+        <div class="schulcard-row">
+          <div class="schulcard-dot"></div>
+          <span>Schulcard</span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.6);margin-left:auto;">Mini-Games + Sprachnachricht</span>
+        </div>
+        <div class="addon-row${b.ar ? ' checked' : ''}" onclick="toggleAddon(${b.id}, 'ar')">
+          <div class="addon-check">${b.ar ? '<svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="#ffec5c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}</div>
+          <span class="addon-label">AR</span>
+          <span class="addon-sub">Augmented Reality-Avatar</span>
+        </div>
+        <div class="addon-row${b.ke ? ' checked' : ''}" onclick="toggleAddon(${b.id}, 'ke')">
+          <div class="addon-check">${b.ke ? '<svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="#ffec5c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}</div>
+          <span class="addon-label">KE</span>
+          <span class="addon-sub">#kurzerklärt</span>
+        </div>
+        <div class="addon-row${b.vr ? ' checked' : ''}" onclick="toggleAddon(${b.id}, 'vr')">
+          <div class="addon-check">${b.vr ? '<svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3L3 5L7 1" stroke="#ffec5c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}</div>
+          <span class="addon-label">VR</span>
+          <span class="addon-sub">360°-Rundgang</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCalc() {
+  const resultBerufe = document.getElementById('result-berufe');
+  const resultTotal = document.getElementById('result-total');
+  const resultEmpty = document.getElementById('result-empty');
+
+  let gesamtJahr = 0, gesamtProd = 0;
+  let html = '';
+
+  berufe.forEach((b, i) => {
+    const sc = PRICES.schulcard[gebiet] - (i > 0 ? 1500 : 0);
+    const ar = b.ar ? PRICES.addon[gebiet] : 0;
+    const ke = b.ke ? PRICES.addon[gebiet] : 0;
+    const vr = b.vr ? PRICES.addon[gebiet] : 0;
+    const arProd = b.ar ? PRICES.prod.ar : 0;
+    const keProd = b.ke ? PRICES.prod.ke : 0;
+    const vrProd = b.vr ? PRICES.prod.vr : 0;
+    const jahrespreis = sc + ar + ke + vr;
+    const prod = arProd + keProd + vrProd;
+
+    gesamtJahr += jahrespreis;
+    gesamtProd += prod;
+
+    html += `
+      <div class="result-beruf-card">
+        <div class="result-beruf-header">
+          <span>${b.name || 'Beruf ' + (i + 1)}</span>
+          ${i > 0 ? '<span class="result-badge">−1.500 € Rabatt</span>' : ''}
+        </div>
+        <div style="padding:8px 0;">
+          <div class="result-line"><span>Schulcard${i > 0 ? ' (inkl. Rabatt)' : ''}</span><span class="amt">${fmt(sc)} p.a.</span></div>
+          ${b.ar ? `<div class="result-line"><span>Augmented Reality-Avatar</span><span class="amt">${fmt(ar)} p.a.</span></div>` : ''}
+          ${b.ke ? `<div class="result-line"><span>#kurzerklärt</span><span class="amt">${fmt(ke)} p.a.</span></div>` : ''}
+          ${b.vr ? `<div class="result-line"><span>360°-Rundgang</span><span class="amt">${fmt(vr)} p.a.</span></div>` : ''}
+          ${arProd > 0 ? `<div class="result-line"><span style="color:#888">AR-Produktion (einmalig)</span><span class="amt" style="color:#888">${fmt(arProd)}</span></div>` : ''}
+          ${keProd > 0 ? `<div class="result-line"><span style="color:#888">KE-Produktion (einmalig)</span><span class="amt" style="color:#888">${fmt(keProd)}</span></div>` : ''}
+          ${vrProd > 0 ? `<div class="result-line"><span style="color:#888">VR-Produktion (einmalig)</span><span class="amt" style="color:#888">${fmt(vrProd)}</span></div>` : ''}
+          <div class="result-line" style="border-top:1px solid #f0f0f0;margin-top:4px;padding-top:8px;">
+            <span style="font-weight:600;">Jahrespreis</span>
+            <span style="font-weight:700;font-size:15px;">${fmt(jahrespreis)} p.a.</span>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  html += `<div class="result-beruf-card">
+    <div class="result-beruf-header" style="background:#e8f7fb;">
+      <span style="color:var(--dark);">JobApp</span>
+      <span class="result-badge" style="background:var(--brand);color:white;">Im Paket enthalten</span>
+    </div>
+    <div style="padding:8px 0;">
+      <div class="result-line"><span>1 Beruf auf der JobApp</span><span class="amt" style="color:var(--brand);">inklusive</span></div>
+    </div>
+  </div>`;
+  resultBerufe.innerHTML = html;
+  resultEmpty.style.display = 'none';
+
+  const erstjahr = gesamtJahr + gesamtProd;
+  resultTotal.style.display = 'block';
+  resultTotal.innerHTML = `
+    <div class="result-total-box">
+      <div style="font-size:12px;font-weight:700;color:var(--dark);margin-bottom:12px;letter-spacing:0.05em;">GESAMTPREIS</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:13px;color:rgba(24,24,24,0.6);">Jahrespreis p.a.</span>
+        <span style="font-size:18px;font-weight:700;color:var(--dark);">${fmt(gesamtJahr)}</span>
+      </div>
+      ${gesamtProd > 0 ? `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:13px;color:rgba(24,24,24,0.6);">Produktion (einmalig)</span>
+        <span style="font-size:18px;font-weight:700;color:var(--dark);">${fmt(gesamtProd)}</span>
+      </div>
+      <div style="height:1px;background:rgba(24,24,24,0.15);margin:8px 0;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:13px;color:rgba(24,24,24,0.6);">Gesamtkosten 1. Jahr</span>
+        <span style="font-size:22px;font-weight:700;color:var(--dark);">${fmt(erstjahr)}</span>
+      </div>` : ''}
+    </div>`;
+}
+
+// ── SCHULSUCHE ───────────────────────────────────
+function searchSchulen() {
+  const plz = document.getElementById('plz-input').value.trim();
+  const radius = document.getElementById('radius-select').value;
+  const input = document.getElementById('plz-input');
+  if (!plz) { input.style.borderColor = '#e53e3e'; input.focus(); return; }
+  input.style.borderColor = '#ddd';
+  window.open(`https://www.deinerstertag.de/schulsuche/?plz=${encodeURIComponent(plz)}&radius=${radius}`, '_blank');
+}
+
+// Init
+renderBerufeForm();
+renderCalc();
+goTo(0);
+</script>
+</body>
+</html>
