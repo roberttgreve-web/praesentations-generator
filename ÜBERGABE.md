@@ -66,9 +66,21 @@ Nutzt denselben Bedrock-Flow wie der eigenständige [Schulcard-Generator](https:
 
 **Wichtig:** `BEDROCK_MODEL_ID` muss zur `AWS_REGION` passen. Bei `AWS_REGION=eu-central-1` funktioniert nur ein `eu.`-Inference-Profile (`eu.anthropic.claude-sonnet-4-6`), ein `us.`-Profile wirft `ValidationException: The provided model identifier is invalid.` (kostete uns produktiv die Schulcard-Generierung, siehe Git-Historie).
 
+Bei "Persönlichkeit" zeigt die umdrehbare Karte (`fc`/Flip-Card in `renderSchulcard()`) nur noch die Eigenschaft selbst (`t.name`) – die von Bedrock miterzeugte Kurzerklärung (`t.desc`) wird bewusst nicht mehr angezeigt.
+
+Auf der Folie "Die Schulcard im Schulportal" (in allen 4 Templates) steht zusätzlich ein gelber Hinweis-Kasten mit Pfeil: *"Übrigens: Dies ist nur ein Dummy. Keine echten Daten."* – rein informativ für die Demo, kein funktionaler Bestandteil.
+
 ## Kundenlogo (ein einziges, überall gleiches Feld)
 
-Egal ob in Schritt 2 ("Kundenlogo", Titelfolie) oder in Schritt 3 ("Unternehmenslogo", Schulcard) hochgeladen/eingefügt – beide Felder sind bidirektional synchronisiert (`setCompanyLogo()` in `index.html`). Es muss nur einmal hochgeladen werden.
+Egal ob in Schritt 2 ("Kundenlogo", Titelfolie) oder in Schritt 3 ("Unternehmenslogo", Schulcard) hochgeladen/eingefügt – beide Felder sind bidirektional synchronisiert (`setCompanyLogo()` in `index.html`). Es muss nur einmal hochgeladen werden. Erscheint dadurch automatisch auch an der richtigen Stelle auf der Titelfolie (oben links, im Verbund mit dem DET-Logo).
+
+## Foto-Uploads: Kompression, Drag & Drop, Mehrfachauswahl
+
+Alle Upload-Zonen (Kundenlogo, Unternehmenslogo, Hero, Arbeitsumfeld-Fotos, Arbeitskleidung) unterstützen Datei-Auswahl, Drag & Drop und "Einfügen" aus der Zwischenablage gleichermaßen (`enableDragDrop()` in `index.html`, wirkt auf jede `.upload-zone`).
+
+Jedes Foto läuft beim Einlesen durch `fileToBase64()`, die es über ein Canvas verkleinert/neu komprimiert (Fotos: max. 1600px, JPEG ~82%; Logos: max. 800px, PNG bleibt für Transparenz erhalten). **Wichtig:** Vercel Serverless Functions haben ein hartes Request-Limit von ~4,5MB. Unkomprimierte Handy-Fotos (mehrfach in der Schulcard eingebettet) haben das früher gesprengt ("Request Entity Too Large" beim Live-Veröffentlichen) – ohne diese Kompression bricht der Deploy-Flow bei echten Fotos schnell wieder.
+
+Arbeitsumfeld-Fotos (`fStory`, max. 4) werden über `onStoryFilesChange()` **akkumuliert** statt bei jeder neuen Dateiauswahl ersetzt zu werden (native `<input type="file">`-Selektionen überschreiben sich sonst gegenseitig). `gImages.logo`/`gImages.story` sind die alleinige Quelle beim Generieren – es wird nicht mehr zusätzlich der rohe Datei-Input neu gelesen.
 
 ## AR-Avatar-Kostenrechner
 
@@ -84,7 +96,9 @@ Baut eine eigenständige HTML-Datei. Kontaktfoto, Kundenlogo, Schulcard **und al
 2. Pusht `index.html` + `schulcard.html` + Kontaktfoto + Kundenlogo + alle statischen Assets der Vorlage (Git Data API: blob → tree → commit → ref)
 3. Legt (falls nötig) ein Vercel-Projekt mit demselben Namen an, verknüpft mit dem Repo
 4. Löst ein Production-Deployment aus
-5. Domain: **`https://deinerstertag-<slug>.vercel.app`**
+5. Fragt die **tatsächlich zugewiesene** Domain über `GET /v9/projects/{id}/domains` ab und gibt genau diese zurück
+
+Domain-Muster: `https://deinerstertag-<slug>.vercel.app` – **aber:** Vercel kürzt lange `.vercel.app`-Domains automatisch auf 36 Zeichen, ohne Fehler zu werfen (z.B. wird aus `deinerstertag-mittelbrandenburgische-sparkasse` real `deinerstertag-mittelbrandenburgisch`). Deshalb wird die Domain nicht mehr selbst aus dem Slug zusammengebaut, sondern nach dem Deploy von Vercel abgefragt (Schritt 5 oben) – sonst zeigt das Tool eine URL an, die 404 wirft. Mit dem 14 Zeichen langen Präfix `deinerstertag-` bleiben nur ~22 Zeichen für den Firmennamen, bevor die Kürzung greift; betrifft also viele reale Firmennamen. Falls störend: Präfix kürzen (z.B. `det-`) ist eine offene Entscheidung, siehe unten.
 
 ### Passwortschutz der Live-Präsentation
 
@@ -117,10 +131,13 @@ Diese Werte sind identisch auf Vercel als Projekt-Environment-Variablen hinterle
 - **Vercel-Datei-Tracing:** `templates/*.html` und `assets/*` werden über dynamisch zusammengesetzte Pfade (`path.join(__dirname, '..', template.file)`) gelesen. Vercels automatische Datei-Erkennung findet solche Pfade nicht zuverlässig – deshalb müssen sie explizit über `functions.<datei>.includeFiles` in `vercel.json` eingebunden werden. Fehlt das, wirft `generate-presentation`/`deploy-presentation` einen `ENOENT`-Fehler.
 - **Git-Push löst nicht immer automatisch ein Production-Deployment aus** (bei anderen Projekten im selben Team, z.B. `pricing-tool`, blieb der Auto-Deploy im Status `BLOCKED` hängen). Bei Bedarf manuell auslösen: `POST https://api.vercel.com/v13/deployments` mit `{ "project": "<id>", "target": "production", "gitSource": { "type": "github", "org": "roberttgreve-web", "repo": "<repo>", "ref": "main" } }`.
 - **Modell-ID muss zur Region passen** (siehe oben) – bei `ValidationException: The provided model identifier is invalid.` zuerst hier nachsehen.
+- **`.vercel.app`-Domains werden bei >36 Zeichen stillschweigend gekürzt** (siehe "Live-Veröffentlichung" oben) – deploy-presentation.js fragt deshalb die reale Domain per API ab, statt sie selbst zu bauen.
+- **Vercel-Request-Limit ~4,5MB**: unkomprimierte Fotos in der Schulcard/im Deploy-Payload führen zu "Request Entity Too Large". Fotos werden deshalb clientseitig vor dem Einbetten komprimiert (siehe "Foto-Uploads" oben) – bei Änderungen an den Upload-Handlern darauf achten, dass `fileToBase64()` weiterhin durchlaufen wird und nicht umgangen wird.
 
 ## Offene Punkte / mögliche nächste Schritte
 
 - [ ] Echter Passwortschutz statt Client-Side-Gate (Vercel Password Protection oder eigene Middleware)
 - [ ] Eigene Domain statt `*.vercel.app` für Live-Präsentationen
+- [ ] Domain-Präfix ggf. kürzen (`deinerstertag-` = 14 Zeichen frisst viel vom 36-Zeichen-Budget, z.B. auf `det-` verkürzen) – offene Entscheidung, noch nicht umgesetzt
 - [ ] Videos ebenfalls für den Offline-Download nutzbar machen (z.B. optional, mit Größenwarnung)
 - [ ] Alte Test-/QA-Deployments (z.B. `deinerstertag-qa-test-firma-xyz`) und deren GitHub-Repos aufräumen
