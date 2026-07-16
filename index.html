@@ -613,12 +613,12 @@ function onCustomerInput() {
 async function onCustomerLogoChange() {
   const f = document.getElementById('fCustomerLogo').files[0];
   if (!f) { clearCompanyLogo(); return; }
-  setCompanyLogo(await fileToBase64(f));
+  setCompanyLogo(await fileToBase64(f, { maxDim: 800, keepFormat: true }));
 }
 async function onScLogoChange() {
   const f = document.getElementById('fScLogo').files[0];
   if (!f) { clearCompanyLogo(); return; }
-  setCompanyLogo(await fileToBase64(f));
+  setCompanyLogo(await fileToBase64(f, { maxDim: 800, keepFormat: true }));
 }
 // Kundenlogo (Titelfolie) und Unternehmenslogo (Schulcard) sind dasselbe Bild –
 // egal wo hochgeladen/eingefügt wird, es erscheint an beiden Stellen.
@@ -664,7 +664,8 @@ async function pasteToZone(zone, e) {
       for (const type of item.types) {
         if (type.startsWith('image/')) {
           const blob = await item.getType(type);
-          const b64 = await fileToBase64(new File([blob], 'paste.png', { type }));
+          const isLogo = zone === 'logo' || zone === 'customerLogo';
+          const b64 = await fileToBase64(new File([blob], 'paste.png', { type }), isLogo ? { maxDim: 800, keepFormat: true } : {});
           applyPaste(zone, b64);
           return;
         }
@@ -688,7 +689,8 @@ document.addEventListener('paste', async function (e) {
   const imgItem = items.find(item => item.type.startsWith('image/'));
   if (!imgItem || !activeZone) return;
   e.preventDefault();
-  const b64 = await fileToBase64(imgItem.getAsFile());
+  const isLogo = activeZone === 'logo' || activeZone === 'customerLogo';
+  const b64 = await fileToBase64(imgItem.getAsFile(), isLogo ? { maxDim: 800, keepFormat: true } : {});
   applyPaste(activeZone, b64);
 });
 function applyPaste(zone, b64) {
@@ -718,15 +720,38 @@ function removeImage(zone, wrapEl) {
   }
 }
 
-function fileToBase64(file) {
-  return new Promise((res, rej) => {
+// Verkleinert/komprimiert Fotos vor dem Einbetten als Base64 – ohne das würden
+// unkomprimierte Handy-Fotos (Hero/Story/Kleidung/Logo, mehrfach in der Schulcard
+// eingebettet) leicht Vercels ~4,5MB-Request-Limit sprengen ("Request Entity Too Large").
+function fileToBase64(file, opts = {}) {
+  const { maxDim = 1600, quality = 0.82, keepFormat = false } = opts;
+  return new Promise((resolve, reject) => {
     const r = new FileReader();
-    r.onload = e => res(e.target.result);
-    r.onerror = rej;
+    r.onerror = reject;
+    r.onload = () => {
+      if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
+        resolve(r.result);
+        return;
+      }
+      const img = new Image();
+      img.onerror = () => resolve(r.result);
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        if (scale === 1 && file.size < 400 * 1024) { resolve(r.result); return; }
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const mime = keepFormat && file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        resolve(canvas.toDataURL(mime, quality));
+      };
+      img.src = r.result;
+    };
     r.readAsDataURL(file);
   });
 }
-async function allToBase64(files) { return Promise.all(Array.from(files).map(fileToBase64)); }
+async function allToBase64(files) { return Promise.all(Array.from(files).map(f => fileToBase64(f))); }
 const PREVIEW_ZONE = { prevScLogo: 'logo', prevHero: 'hero', prevClothing: 'clothing', prevStory: 'story' };
 function previewOne(inputId, previewId) {
   const f = document.getElementById(inputId).files[0];
