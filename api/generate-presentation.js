@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
 
   try {
     const {
-      templateId, companyName, branche, contactPersonId, logoBase64,
+      templateId, companyName, contactPersonId, logoBase64,
       contractPrice, contractEndDate, arProdCost, arMarketingCost, schulcardHtml,
     } = req.body;
 
@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
     }
 
     const html = renderPresentation({
-      templateId, companyName, branche, contactPersonId, logoBase64,
+      templateId, companyName, contactPersonId, logoBase64,
       contractPrice, contractEndDate, arProdCost, arMarketingCost, schulcardHtml,
     }, { embed: true });
 

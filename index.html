@@ -226,14 +226,10 @@ input.v-invalid{border-color:#ef4444}
             <div class="upload-txt">Logo des Kunden für die Titel-Folie</div>
             <div class="uz-row">
               <label for="fCustomerLogo" class="uz-btn">📂 Datei wählen</label>
+              <button class="uz-btn uz-paste" onclick="pasteToZone('customerLogo',event)">📋 Einfügen</button>
             </div>
             <div class="thumbs" id="prevCustomerLogo"></div>
           </div>
-        </div>
-
-        <div class="full">
-          <label>Branche</label>
-          <input type="text" id="fBranche" placeholder="z.B. Handwerk, IT, Handel …" oninput="onCustomerInput()">
         </div>
 
         <div class="full" id="group-contractPrice" style="display:none">
@@ -243,6 +239,19 @@ input.v-invalid{border-color:#ef4444}
         <div class="full" id="group-contractEndDate" style="display:none">
           <label>Testphase-Enddatum *</label>
           <input type="text" id="fContractEndDate" placeholder="z.B. 31.12.2026" oninput="onCustomerInput()">
+        </div>
+        <div class="full" id="group-arCalc" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <label style="margin:0">AR-Avatar Kosten</label>
+            <button type="button" class="uz-btn" id="btnArCalcToggle" onclick="toggleArCalc()">🧮 Preis berechnen</button>
+          </div>
+          <div id="arCalcBox" style="display:none;margin-top:8px">
+            <iframe id="arCalcFrame" src="https://deinerstertag-pricing.vercel.app" title="Preiskalkulator" style="width:100%;height:520px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fff"></iframe>
+            <div class="uz-row" style="margin-top:8px">
+              <button type="button" class="btn-gen" style="flex:1" onclick="applyArPricing()">✅ Preis übernehmen</button>
+            </div>
+            <div class="url-hint" id="arCalcHint">Gebiet & Formate im Rechner oben wählen, dann übernehmen.</div>
+          </div>
         </div>
         <div class="full" id="group-arProdCost" style="display:none">
           <label>AR-Avatar Produktionskosten (€) *</label>
@@ -295,6 +304,7 @@ input.v-invalid{border-color:#ef4444}
           <div class="sb-title"><span class="step-n" id="stepN2">2</span>Fotos</div>
 
           <label>Unternehmenslogo (für die Schulcard)</label>
+          <div class="url-hint" style="margin-bottom:6px">Wird automatisch aus den Kundendaten übernommen – bei Bedarf hier ersetzen.</div>
           <div class="upload-zone">
             <input type="file" id="fScLogo" accept="image/*" onchange="previewOne('fScLogo','prevScLogo')">
             <div class="upload-icon">🏢</div>
@@ -446,7 +456,7 @@ let gStep = 0;
 let gMaxStepReached = 0;
 let gPerson = null;
 let gTemplateId = null;
-let gCustomer = { companyName: '', logoBase64: '', branche: '', contractPrice: '', contractEndDate: '', arProdCost: '', arMarketingCost: '' };
+let gCustomer = { companyName: '', logoBase64: '', contractPrice: '', contractEndDate: '', arProdCost: '', arMarketingCost: '' };
 let gFinalHtml = null;
 let gSchulcardHtmlFinal = null;
 
@@ -502,6 +512,10 @@ function goToStep(n) {
     document.getElementById('fCompanySc').value = gCustomer.companyName || '';
     updateScProgress();
   }
+  if (n === 3 && !gImages.logo && gCustomer.logoBase64) {
+    gImages.logo = gCustomer.logoBase64;
+    addThumbB64('prevScLogo', gImages.logo, false, 'logo');
+  }
   if (n === 4 && !gFinalHtml) runGenerateStep4();
 }
 
@@ -544,10 +558,41 @@ function applyTemplateFieldsVisibility() {
   ['contractPrice', 'contractEndDate', 'arProdCost', 'arMarketingCost'].forEach(f => {
     document.getElementById('group-' + f).style.display = ex.includes(f) ? '' : 'none';
   });
+  document.getElementById('group-arCalc').style.display =
+    (ex.includes('arProdCost') || ex.includes('arMarketingCost')) ? '' : 'none';
+}
+
+// ── AR-AVATAR PREISKALKULATOR (eingebettet via iframe) ───────────────────────────
+let gArPricing = null;
+window.addEventListener('message', (e) => {
+  if (!e.data || e.data.type !== 'pricing-tool:update') return;
+  gArPricing = e.data;
+  const hint = document.getElementById('arCalcHint');
+  if (hint) {
+    hint.textContent = `Aktuell: Produktion ${formatEuroDe(e.data.gesamtProduktion)} · Schulvermarktung ${formatEuroDe(e.data.gesamtJahrespreis)} p.a. – dann übernehmen.`;
+  }
+});
+function formatEuroDe(n) {
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
+}
+function toggleArCalc() {
+  const box = document.getElementById('arCalcBox');
+  const open = box.style.display === 'none';
+  box.style.display = open ? '' : 'none';
+  document.getElementById('btnArCalcToggle').textContent = open ? '🧮 Rechner schließen' : '🧮 Preis berechnen';
+}
+function applyArPricing() {
+  if (!gArPricing) { showErr2('Bitte zuerst im Rechner oben Gebiet & Formate wählen.'); return; }
+  document.getElementById('fArProdCost').value = formatEuroDe(gArPricing.gesamtProduktion);
+  document.getElementById('fArMarketingCost').value = formatEuroDe(gArPricing.gesamtJahrespreis);
+  onCustomerInput();
+}
+function showErr2(msg) {
+  const hint = document.getElementById('arCalcHint');
+  if (hint) { hint.textContent = msg; hint.style.color = '#e5484d'; }
 }
 function onCustomerInput() {
   gCustomer.companyName    = document.getElementById('fCompanyName').value;
-  gCustomer.branche        = document.getElementById('fBranche').value;
   gCustomer.contractPrice  = document.getElementById('fContractPrice').value;
   gCustomer.contractEndDate= document.getElementById('fContractEndDate').value;
   gCustomer.arProdCost     = document.getElementById('fArProdCost').value;
@@ -575,7 +620,7 @@ let gImages = { hero: '', story: [], clothing: '', logo: '' };
 let activeZone = null;
 let gTrainingType = 'ausbildung';
 
-const ZONE_LABELS = { logo: 'Unternehmenslogo', hero: 'Hero-Foto', story: 'Arbeitsumfeld-Foto', clothing: 'Arbeitskleidung' };
+const ZONE_LABELS = { logo: 'Unternehmenslogo', hero: 'Hero-Foto', story: 'Arbeitsumfeld-Foto', clothing: 'Arbeitskleidung', customerLogo: 'Kundenlogo' };
 
 async function pasteToZone(zone, e) {
   e.stopPropagation();
@@ -617,6 +662,7 @@ function applyPaste(zone, b64) {
   if (zone === 'story')    { if (!gImages.story) gImages.story = []; if (gImages.story.length < 4) { gImages.story.push(b64); addThumbB64('prevStory', b64, true, 'story'); } }
   if (zone === 'clothing') { gImages.clothing = b64; addThumbB64('prevClothing', b64, false, 'clothing'); }
   if (zone === 'logo')     { gImages.logo = b64;    addThumbB64('prevScLogo',   b64, false, 'logo'); }
+  if (zone === 'customerLogo') { gCustomer.logoBase64 = b64; addThumbB64('prevCustomerLogo', b64, false, 'customerLogo'); }
   cancelPaste();
 }
 function addThumbB64(previewId, b64, append, zone) {
@@ -633,6 +679,7 @@ function removeImage(zone, wrapEl) {
   if (zone === 'hero')     gImages.hero = '';
   if (zone === 'clothing') gImages.clothing = '';
   if (zone === 'logo')     gImages.logo = '';
+  if (zone === 'customerLogo') { gCustomer.logoBase64 = ''; document.getElementById('fCustomerLogo').value = ''; }
   if (zone === 'story') {
     const remaining = document.querySelectorAll('#prevStory .thumb');
     gImages.story = Array.from(remaining).map(img => img.src);
@@ -1331,7 +1378,6 @@ async function runGenerateStep4() {
       body: JSON.stringify({
         templateId: gTemplateId,
         companyName: gCustomer.companyName,
-        branche: gCustomer.branche,
         contactPersonId: gPerson.id,
         logoBase64: gCustomer.logoBase64,
         contractPrice: gCustomer.contractPrice,
@@ -1381,7 +1427,6 @@ async function deployFinal() {
       body: JSON.stringify({
         templateId: gTemplateId,
         companyName: gCustomer.companyName,
-        branche: gCustomer.branche,
         contactPersonId: gPerson.id,
         logoBase64: gCustomer.logoBase64,
         contractPrice: gCustomer.contractPrice,

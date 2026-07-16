@@ -12,7 +12,7 @@ const bedrock = new BedrockRuntimeClient({
 const SYSTEM_PROMPT = `Du bist ein Experte für deutsche Ausbildungsberufe, Duale Studiengänge und Unternehmen. Du erstellst Inhalte für Schulcards – visuelle Berufserkundungskarten für Schüler*innen (14–16 Jahre). WICHTIGSTE REGELN: (1) Alle Inhalte müssen 100% zum genannten Beruf und Unternehmen passen. Verwende niemals Inhalte aus anderen Berufsfeldern. (2) Verwende KEIN Markdown in Textwerten (keine **Fettung**, keine Unterstriche). (3) Gendering: IMMER *in-Schreibweise (Mechaniker*in, Informatiker*in), niemals /in, (in) oder andere Formen.`;
 
 async function callBedrock(userPrompt) {
-  const modelId = process.env.BEDROCK_MODEL_ID || 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
+  const modelId = process.env.BEDROCK_MODEL_ID || 'eu.anthropic.claude-sonnet-4-6';
   const res = await bedrock.send(new InvokeModelCommand({
     modelId,
     contentType: 'application/json',
