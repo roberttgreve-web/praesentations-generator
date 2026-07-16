@@ -64,6 +64,7 @@ textarea{width:100%;padding:9px 11px;border:1.5px solid #e0e0e0;border-radius:7p
 textarea:focus{border-color:var(--yellow)}
 
 .upload-zone{border:2px dashed #e0e0e0;border-radius:9px;padding:16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;position:relative;overflow:hidden}
+.upload-zone.drag-over{border-color:var(--brand);background:#f0fbfd}
 .upload-zone:hover{border-color:var(--brand);background:#f0fbfd}
 .upload-zone input[type=file]{display:none}
 .upload-icon{font-size:22px;margin-bottom:4px}
@@ -151,8 +152,6 @@ textarea:focus{border-color:var(--yellow)}
 .deploy-result a{color:var(--brand);font-weight:700;font-size:13.5px;word-break:break-all}
 .copy-btn{padding:7px 12px;border-radius:6px;border:1.5px solid var(--brand);background:#fff;color:var(--brand);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
 .copy-btn:hover{background:var(--brand);color:#fff}
-.result-preview-wrap{margin-top:22px;max-width:880px}
-.result-preview{border:1px solid #e0e0e0;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.08);width:100%;height:520px;background:#fff}
 
 /* ── LOADING ── */
 .overlay{position:fixed;inset:0;background:rgba(26,26,46,.88);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
@@ -425,12 +424,9 @@ input.v-invalid{border-color:#ef4444}
           <a id="deployUrl" href="#" target="_blank">–</a>
           <span id="deployPwWrap">· Passwort: <strong id="deployPw">–</strong></span>
           <button class="copy-btn" onclick="copyDeployBlock()">📋 Für E-Mail kopieren</button>
+          <div class="result-hint" style="width:100%">Kann auch nach Live-Schaltung noch 1–2 Minuten dauern, bis die Domain wirklich online ist.</div>
         </div>
         <div class="err" id="errBox4"></div>
-      </div>
-
-      <div class="result-preview-wrap">
-        <iframe class="result-preview" id="resultPreview"></iframe>
       </div>
 
       <div class="wiz-nav">
@@ -1447,7 +1443,6 @@ async function runGenerateStep4() {
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.error || 'Serverfehler');
     gFinalHtml = result.html;
-    document.getElementById('resultPreview').srcdoc = gFinalHtml;
   } catch (e) {
     showErr4(e.message);
   } finally {
@@ -1523,6 +1518,28 @@ function copyDeployBlock() {
     : url;
   navigator.clipboard.writeText(text).catch(() => {});
 }
+
+// ── DRAG & DROP für alle Upload-Zonen ─────────────────────────────────────────────
+function enableDragDrop(zoneEl) {
+  const input = zoneEl.querySelector('input[type=file]');
+  if (!input) return;
+  let depth = 0;
+  zoneEl.addEventListener('dragover', (e) => { e.preventDefault(); });
+  zoneEl.addEventListener('dragenter', (e) => { e.preventDefault(); depth++; zoneEl.classList.add('drag-over'); });
+  zoneEl.addEventListener('dragleave', () => { depth = Math.max(0, depth - 1); if (depth === 0) zoneEl.classList.remove('drag-over'); });
+  zoneEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    depth = 0;
+    zoneEl.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+    if (!files.length) return;
+    const dt = new DataTransfer();
+    (input.multiple ? files.slice(0, 4) : [files[0]]).forEach(f => dt.items.add(f));
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change'));
+  });
+}
+document.querySelectorAll('.upload-zone').forEach(enableDragDrop);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INIT
