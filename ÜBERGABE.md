@@ -98,7 +98,7 @@ Baut eine eigenständige HTML-Datei. Kontaktfoto, Kundenlogo, Schulcard **und al
 4. Löst ein Production-Deployment aus
 5. Fragt die **tatsächlich zugewiesene** Domain über `GET /v9/projects/{id}/domains` ab und gibt genau diese zurück
 
-Domain-Muster: `https://deinerstertag-<slug>.vercel.app` – **aber:** Vercel kürzt lange `.vercel.app`-Domains automatisch auf 36 Zeichen, ohne Fehler zu werfen (z.B. wird aus `deinerstertag-mittelbrandenburgische-sparkasse` real `deinerstertag-mittelbrandenburgisch`). Deshalb wird die Domain nicht mehr selbst aus dem Slug zusammengebaut, sondern nach dem Deploy von Vercel abgefragt (Schritt 5 oben) – sonst zeigt das Tool eine URL an, die 404 wirft. Mit dem 14 Zeichen langen Präfix `deinerstertag-` bleiben nur ~22 Zeichen für den Firmennamen, bevor die Kürzung greift; betrifft also viele reale Firmennamen. Falls störend: Präfix kürzen (z.B. `det-`) ist eine offene Entscheidung, siehe unten.
+Domain-Muster: `https://deinerstertag-<slug>.vercel.app` – **aber:** Vercel kürzt lange `.vercel.app`-Domains automatisch auf 36 Zeichen, ohne Fehler zu werfen (z.B. wird aus `deinerstertag-mittelbrandenburgische-sparkasse` real `deinerstertag-mittelbrandenburgisch`, aus `deinerstertag-collm-klinik-oschatz-gmbh` real `deinerstertag-collm-klinik-oschatz`). Deshalb wird die Domain nicht mehr selbst aus dem Slug zusammengebaut, sondern nach dem Deploy von Vercel abgefragt (Schritt 5 oben) – sonst zeigt das Tool eine URL an, die 404 wirft. Mit dem 14 Zeichen langen Präfix `deinerstertag-` bleiben nur ~22 Zeichen für den Firmennamen, bevor die Kürzung greift; betrifft also viele reale Firmennamen. Falls störend: Präfix kürzen (z.B. `det-`) ist eine offene Entscheidung, siehe unten. **In Produktion bestätigt:** der Fix liefert seither zuverlässig die korrekte, tatsächlich erreichbare URL (Stichprobe Collm Klinik Oschatz GmbH, 16.07.2026) – ein 404 bei einer Kollegin lag an zu schnellem Testen direkt nach dem Deploy (Domain war noch nicht propagiert, siehe Hinweistext "kann 1-2 Minuten dauern").
 
 ### Passwortschutz der Live-Präsentation
 
@@ -111,6 +111,16 @@ Domain + Passwort werden in Schritt 5 als ein Block angezeigt und lassen sich mi
 ### Verwaltung der Passwörter
 
 Jede Live-Veröffentlichung wird zusätzlich in Upstash Redis unter dem Key `praesentationen` geloggt (`companyName`, `url`, `password`, `contactPersonId`, `createdAt` – max. 100 Einträge). Auf **[det-saleshelper.vercel.app](https://det-saleshelper.vercel.app)** gibt es unten rechts einen Button **"🔑 Passwörter"**, der diese Liste anzeigt (liest denselben Redis-Key über `/api/dashboard`) und pro Eintrag einen "Kopieren"-Block anbietet. Dieselben Einträge erscheinen dadurch automatisch auch im bestehenden "Zuletzt erstellt"-Feed des SalesHelpers.
+
+## Layout-Fixes in den Templates (alle 4 Vorlagen, sofern zutreffend)
+
+- **Titelfolie-Logo-Leiste:** `.title-logo-bar` hatte `justify-content:space-between`, wodurch DET-Logo und Kundenlogo über die volle Folienbreite auseinandergerissen wurden statt als kompaktes "Logo × Logo"-Paar zusammenzustehen (Referenz: [det-neukunden-demo.vercel.app](https://det-neukunden-demo.vercel.app)). Jetzt `gap:16px` ohne `space-between`.
+- **Kontakt-/Abschied-Folie:** Das DET-Logo saß durch `justify-content:center` auf `.slide-inner` vertikal mittig statt oben links wie auf allen anderen Folien. Jetzt per `position:absolute;top:56px;left:72px` (bzw. `top:44px` bei neukunden-demo-b2b) fix oben links verankert.
+- **Medienbox-Folie (5 Stationen):** Handy-Mockups sind jetzt deutlich größer (`height:60vh`, wie auf der AR-Avatar-Folie) statt vorher 263px. Das führt bei kleineren Fensterhöhen zu Overflow – das ist so gewollt (Nutzer-Feedback: Größe hat Priorität vor Scroll-Freiheit). Damit das nicht wieder als "Folie lässt sich nicht scrollen" auffällt: `.slide-inner::-webkit-scrollbar` ist nicht mehr komplett unsichtbar, sondern zeigt eine dezente 6px-Scrollbar, sobald Inhalt überläuft. Bei neukunden-demo-b2b wurde zusätzlich ein verschachteltes `overflow-y:auto` auf `#tabs-medienbox` entfernt (führte zu einem zweiten, unabhängigen Scroll-Container, der die neue Scrollbar-Lösung unterlaufen hätte).
+- **AR-Avatar-Video (Folie "Produktküche"):** Mockup war vorher mit fixer `aspect-ratio` breiten-getrieben und wurde bei zu wenig Höhe vom `overflow:hidden` der Folie abgeschnitten. Jetzt `height:60vh;width:auto` – Höhe ist die feste Achse, Breite ergibt sich aus dem Seitenverhältnis.
+- **Nur-App-Vorlage, Folie "Nächste Schritte":** Bild war mit `height:700px` deutlich zu hoch (unnötiges Scrollen), auf `480px` reduziert – analog zu App+SV und Nur-SV, die das schon richtig hatten.
+- **Neukunden-Demo, Folie "Upgrades":** Video-Spalte war mit `flex:0 0 220px` extrem schmal/verzerrt neben den drei Info-Karten, auf `420px` verbreitert.
+- Text "#kurzerklärt im TikTok-Format" → "im Videostream" (Markenname entfernt).
 
 ## Secrets (.env)
 
@@ -133,6 +143,7 @@ Diese Werte sind identisch auf Vercel als Projekt-Environment-Variablen hinterle
 - **Modell-ID muss zur Region passen** (siehe oben) – bei `ValidationException: The provided model identifier is invalid.` zuerst hier nachsehen.
 - **`.vercel.app`-Domains werden bei >36 Zeichen stillschweigend gekürzt** (siehe "Live-Veröffentlichung" oben) – deploy-presentation.js fragt deshalb die reale Domain per API ab, statt sie selbst zu bauen.
 - **Vercel-Request-Limit ~4,5MB**: unkomprimierte Fotos in der Schulcard/im Deploy-Payload führen zu "Request Entity Too Large". Fotos werden deshalb clientseitig vor dem Einbetten komprimiert (siehe "Foto-Uploads" oben) – bei Änderungen an den Upload-Handlern darauf achten, dass `fileToBase64()` weiterhin durchlaufen wird und nicht umgangen wird.
+- **Unsichtbare Scrollbar täuscht "kaputtes" Scrollen vor:** `.slide-inner::-webkit-scrollbar{display:none}` hat mehrfach zu Bug-Reports geführt ("Folie lässt sich nicht scrollen"), obwohl das Scroll-Verhalten technisch funktionierte – ohne Scrollbar sieht man einfach nicht, dass es welches gibt. Jetzt eine dezente sichtbare Scrollbar statt komplett versteckt.
 
 ## Offene Punkte / mögliche nächste Schritte
 
