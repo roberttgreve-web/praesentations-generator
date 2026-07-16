@@ -331,7 +331,7 @@ input.v-invalid{border-color:#ef4444}
 
           <label style="margin-top:10px">Arbeitsumfeld-Fotos (2–4 Fotos)</label>
           <div class="upload-zone">
-            <input type="file" id="fStory" accept="image/*" multiple onchange="previewMany('fStory','prevStory',4)">
+            <input type="file" id="fStory" accept="image/*" multiple onchange="onStoryFilesChange()">
             <div class="upload-icon">🏗️</div>
             <div class="upload-txt">2–4 Fotos vom Arbeitsalltag</div>
             <div class="uz-row">
@@ -747,7 +747,6 @@ function fileToBase64(file, opts = {}) {
     r.readAsDataURL(file);
   });
 }
-async function allToBase64(files) { return Promise.all(Array.from(files).map(f => fileToBase64(f))); }
 const PREVIEW_ZONE = { prevScLogo: 'logo', prevHero: 'hero', prevClothing: 'clothing', prevStory: 'story' };
 function previewOne(inputId, previewId) {
   const f = document.getElementById(inputId).files[0];
@@ -762,18 +761,17 @@ function previewOne(inputId, previewId) {
   rm.onclick = (ev) => { ev.stopPropagation(); removeImage(zone, wrap); document.getElementById(inputId).value = ''; };
   wrap.appendChild(img); wrap.appendChild(rm); p.appendChild(wrap);
 }
-function previewMany(inputId, previewId, max) {
-  const files = Array.from(document.getElementById(inputId).files).slice(0, max);
-  const p = document.getElementById(previewId);
-  p.innerHTML = '';
-  const zone = PREVIEW_ZONE[previewId];
-  files.forEach(f => {
-    const wrap = document.createElement('div'); wrap.className = 'thumb-wrap';
-    const img = document.createElement('img'); img.className = 'thumb'; img.src = URL.createObjectURL(f);
-    const rm = document.createElement('button'); rm.className = 'thumb-rm'; rm.title = 'Bild entfernen'; rm.textContent = '✕';
-    rm.onclick = (ev) => { ev.stopPropagation(); removeImage(zone, wrap); };
-    wrap.appendChild(img); wrap.appendChild(rm); p.appendChild(wrap);
-  });
+async function onStoryFilesChange() {
+  const input = document.getElementById('fStory');
+  const files = Array.from(input.files);
+  if (!gImages.story) gImages.story = [];
+  for (const f of files) {
+    if (gImages.story.length >= 4) break;
+    const b64 = await fileToBase64(f);
+    gImages.story.push(b64);
+    addThumbB64('prevStory', b64, true, 'story');
+  }
+  input.value = ''; // sonst ersetzt die naechste Dateiauswahl statt zu ergaenzen
 }
 
 let loadTimers = [];
@@ -808,18 +806,17 @@ async function generate() {
   document.getElementById('btnGen').disabled = true;
 
   try {
+    // Logo und Arbeitsumfeld-Fotos (gImages.logo/story) werden bereits beim Hochladen/
+    // Einfuegen befuellt (setCompanyLogo/onStoryFilesChange) - hier nur noch Hero/Kleidung
+    // aus dem Datei-Input lesen, falls gerade neu ausgewaehlt.
     const heroFiles     = document.getElementById('fHero').files;
-    const storyFiles    = document.getElementById('fStory').files;
     const clothingFiles = document.getElementById('fClothing').files;
-    const logoFiles     = document.getElementById('fScLogo').files;
 
-    const [heroB64, storyB64s, clothingB64, logoB64] = await Promise.all([
+    const [heroB64, clothingB64] = await Promise.all([
       heroFiles[0]      ? fileToBase64(heroFiles[0])     : Promise.resolve(gImages.hero || ''),
-      storyFiles.length ? allToBase64(Array.from(storyFiles).slice(0, 4)) : Promise.resolve(gImages.story || []),
       clothingFiles[0]  ? fileToBase64(clothingFiles[0]) : Promise.resolve(gImages.clothing || ''),
-      logoFiles[0]      ? fileToBase64(logoFiles[0])     : Promise.resolve(gImages.logo || ''),
     ]);
-    gImages = { hero: heroB64, story: storyB64s, clothing: clothingB64, logo: logoB64 };
+    gImages = { ...gImages, hero: heroB64, clothing: clothingB64 };
 
     const resp = await fetch('/api/generate', {
       method: 'POST',
@@ -984,7 +981,7 @@ function renderSchulcard(d, imgs) {
   const traits = (d.traits||[]).map(t =>
     '<div class="fc" onclick="this.classList.toggle(\'flipped\')">' +
     '<div class="fc-inner"><div class="fc-front"><div class="fc-emoji">' + t.emoji + '</div></div>' +
-    '<div class="fc-back"><div class="fc-name">' + t.name + '</div><div class="fc-desc">' + t.desc + '</div></div></div></div>'
+    '<div class="fc-back"><div class="fc-name">' + t.name + '</div></div></div></div>'
   ).join('');
 
   const social = [

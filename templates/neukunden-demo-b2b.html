@@ -872,6 +872,16 @@
     <div id="schulcard-iframe-panel" style="position:absolute;top:128px;left:560px;right:44px;bottom:88px;border-radius:16px;overflow:hidden;border:1px solid #e5e5e5;z-index:5;">
       <iframe src="{{SCHULCARD_SRC}}" style="width:100%;height:100%;border:none;" frameborder="0"></iframe>
     </div>
+    <!-- Dummy-Hinweis: zeigt auf die Schulcard, nur sichtbar wenn Tab 1 aktiv -->
+    <div id="dummy-hint" style="position:absolute;left:5%;bottom:60px;max-width:280px;z-index:6;">
+      <div style="background:var(--yellow);border-radius:14px;padding:14px 18px;font-size:13px;line-height:1.5;box-shadow:0 6px 18px rgba(0,0,0,0.15);">
+        <strong>Übrigens:</strong> Dies ist nur ein Dummy. Keine echten Daten.
+      </div>
+      <svg width="140" height="70" viewBox="0 0 140 70" style="position:absolute;top:-56px;right:-110px;pointer-events:none;">
+        <path d="M6 62 C 60 62, 90 40, 128 10" stroke="#00afd6" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M116 4 L130 8 L124 22" stroke="#00afd6" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -896,8 +906,8 @@
 
         <!-- Station 1: Mini-Games -->
         <div id="mb-s1" class="tab-panel active">
-          <div class="tab-media" style="height:270px;display:flex;align-items:center;justify-content:center;">
-            <div class="phone-mockup" style="width:127px;height:263px;">
+          <div class="tab-media" style="height:60vh;display:flex;align-items:center;justify-content:center;">
+            <div class="phone-mockup" style="height:60vh;width:auto;max-width:400px;aspect-ratio:180/375;">
               <video src="Mini_Games_NEU.mp4" autoplay muted loop playsinline></video>
             </div>
           </div>
@@ -919,8 +929,8 @@
 
         <!-- Station 2: Azubi-Chat -->
         <div id="mb-s2" class="tab-panel">
-          <div class="tab-media" style="height:270px;display:flex;align-items:center;justify-content:center;">
-            <div class="phone-mockup" style="width:127px;height:263px;">
+          <div class="tab-media" style="height:60vh;display:flex;align-items:center;justify-content:center;">
+            <div class="phone-mockup" style="height:60vh;width:auto;max-width:400px;aspect-ratio:180/375;">
               <video src="Azubi_Chat_NEU.mp4" autoplay muted loop playsinline></video>
             </div>
           </div>
@@ -942,8 +952,8 @@
 
         <!-- Station 3: Kurzfilm-Kino -->
         <div id="mb-s3" class="tab-panel">
-          <div class="tab-media" style="height:270px;display:flex;align-items:center;justify-content:center;">
-            <div class="phone-mockup" style="width:127px;height:263px;">
+          <div class="tab-media" style="height:60vh;display:flex;align-items:center;justify-content:center;">
+            <div class="phone-mockup" style="height:60vh;width:auto;max-width:400px;aspect-ratio:180/375;">
               <div style="width:100%;height:100%;background:#fff;overflow:hidden;">
                 <div class="feed-track">
                   <img src="Thumbnail YT 1.png" alt="Kurzfilm-Kino Beispiel 1" style="width:100%;height:auto;display:block;" />
@@ -984,7 +994,7 @@
 
         <!-- Station 4: 360-Grad-Rundgänge erleben -->
         <div id="mb-s4" class="tab-panel">
-          <div class="tab-media" style="height:270px;background:#000;position:relative;cursor:pointer;" onclick="playFacade(this, 'OZZjn3BEouU')">
+          <div class="tab-media" style="height:60vh;background:#000;position:relative;cursor:pointer;" onclick="playFacade(this, 'OZZjn3BEouU')">
             <img src="VR Magic.png" alt="360° erleben" style="width:100%;height:100%;object-fit:cover;" />
             <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
               <div style="width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;">
@@ -1010,8 +1020,8 @@
 
         <!-- Station 5: AR-Gamecards -->
         <div id="mb-s5" class="tab-panel">
-          <div class="tab-media" style="height:270px;display:flex;align-items:center;justify-content:center;">
-            <div class="phone-mockup" style="width:127px;height:263px;">
+          <div class="tab-media" style="height:60vh;display:flex;align-items:center;justify-content:center;">
+            <div class="phone-mockup" style="height:60vh;width:auto;max-width:400px;aspect-ratio:180/375;">
               <video src="AR.mp4" autoplay muted loop playsinline></video>
             </div>
           </div>
@@ -1439,7 +1449,7 @@
   ══════════════════════════════════════════ -->
   <div class="slide" id="slide-10" data-dark="false">
     <div class="slide-inner" style="justify-content:center;">
-      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" />
+      <img src="Large.svg" alt="DEIN ERSTER TAG" class="slide-logo-sm" style="position:absolute;top:44px;left:72px;margin-bottom:0;" />
 
       <div style="display:flex;flex-direction:column;align-items:flex-start;gap:24px;margin-top:8px;">
         <div style="width:120px;height:120px;border-radius:50%;overflow:hidden;border:3px solid var(--brand);">
@@ -1536,6 +1546,8 @@ function switchTab(containerId, panelId, btn) {
   btn.classList.add('active');
   const sc = document.getElementById('schulcard-iframe-panel');
   if (sc) sc.style.display = panelId === 'tab-sn' ? 'block' : 'none';
+  const hint = document.getElementById('dummy-hint');
+  if (hint) hint.style.display = panelId === 'tab-sn' ? 'block' : 'none';
 }
 
 // ── PRICING CALCULATOR ──────────────────────────
