@@ -190,7 +190,14 @@ async function deployPresentation(input) {
     throw new Error('Deployment fehlgeschlagen: ' + JSON.stringify(deploy.data));
   }
 
-  const liveUrl = `https://${slug}.vercel.app`;
+  // Vercel kürzt automatisch generierte .vercel.app-Domains bei langen Projektnamen
+  // (~35-36 Zeichen) OHNE Fehlermeldung. Deshalb die tatsächlich zugewiesene Domain
+  // abfragen statt sie selbst aus dem Slug zu konstruieren (sonst zeigt das Tool eine
+  // URL an, die real gar nicht existiert -> 404).
+  let liveUrl = `https://${slug}.vercel.app`;
+  const domains = await vc('GET', `/v9/projects/${projectId}/domains`);
+  const realDomain = domains.data?.domains?.find(d => d.name.endsWith('.vercel.app'));
+  if (realDomain) liveUrl = `https://${realDomain.name}`;
 
   await logPresentation({
     id: slug + '-' + Date.now(),
