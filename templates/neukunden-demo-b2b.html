@@ -181,7 +181,10 @@
       display: flex;
       flex-direction: column;
     }
-    .slide-inner::-webkit-scrollbar { display: none; }
+    .slide-inner::-webkit-scrollbar { width: 6px; }
+    .slide-inner::-webkit-scrollbar-track { background: transparent; }
+    .slide-inner::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+    .slide-inner::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.28); }
 
     .slide-logo-sm {
       height: 26px;
@@ -902,7 +905,7 @@
         <button class="tab-btn" onclick="switchTab('tabs-medienbox', 'mb-s5', this)">Station 5: AR-Gamecards</button>
       </div>
 
-      <div id="tabs-medienbox" style="flex:1;min-height:0;overflow-y:auto;">
+      <div id="tabs-medienbox" style="flex:1;min-height:0;">
 
         <!-- Station 1: Mini-Games -->
         <div id="mb-s1" class="tab-panel active">
@@ -1246,7 +1249,7 @@
       <p style="font-size:15px;color:rgba(24,24,24,0.55);margin-bottom:20px;margin-top:-10px;">Mit unseren Upgrades.</p>
 
       <div style="display:flex;gap:32px;flex:1;min-height:0;align-items:stretch;">
-        <div style="flex:0 0 220px;border-radius:16px;overflow:hidden;background:#000;">
+        <div style="flex:0 0 420px;border-radius:16px;overflow:hidden;background:#000;">
           <iframe src="https://www.youtube.com/embed/QowVfjocyUI?rel=0&modestbranding=1" style="width:100%;height:100%;border:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
         <div style="flex:1;display:flex;flex-direction:column;gap:14px;">
