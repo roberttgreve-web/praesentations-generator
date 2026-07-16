@@ -138,7 +138,9 @@ textarea:focus{border-color:var(--yellow)}
 
 /* ── STEP 4: RESULT ── */
 .result-box{max-width:640px}
-.result-actions{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+.result-actions{display:flex;gap:20px;margin-top:20px;flex-wrap:wrap}
+.result-action-col{display:flex;flex-direction:column;gap:6px;max-width:280px}
+.result-hint{font-size:11.5px;color:#888;line-height:1.4}
 .btn-download{background:var(--dark);color:#fff;border:none;border-radius:9px;padding:13px 22px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
 .btn-download:hover{background:#2a2a4e}
 .btn-deploy{background:var(--yellow);color:var(--dark);border:none;border-radius:9px;padding:13px 22px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
@@ -255,11 +257,11 @@ input.v-invalid{border-color:#ef4444}
         </div>
         <div class="full" id="group-arProdCost" style="display:none">
           <label>AR-Avatar Produktionskosten (€) *</label>
-          <input type="text" id="fArProdCost" placeholder="z.B. 1.200 €" oninput="onCustomerInput()">
+          <input type="text" id="fArProdCost" placeholder="z.B. 1.200 €" oninput="onCustomerInput()" onblur="normalizeEuroField(this)">
         </div>
         <div class="full" id="group-arMarketingCost" style="display:none">
           <label>AR-Avatar Schulvermarktungskosten (€) *</label>
-          <input type="text" id="fArMarketingCost" placeholder="z.B. 800 €" oninput="onCustomerInput()">
+          <input type="text" id="fArMarketingCost" placeholder="z.B. 800 €" oninput="onCustomerInput()" onblur="normalizeEuroField(this)">
         </div>
       </div>
 
@@ -304,9 +306,9 @@ input.v-invalid{border-color:#ef4444}
           <div class="sb-title"><span class="step-n" id="stepN2">2</span>Fotos</div>
 
           <label>Unternehmenslogo (für die Schulcard)</label>
-          <div class="url-hint" style="margin-bottom:6px">Wird automatisch aus den Kundendaten übernommen – bei Bedarf hier ersetzen.</div>
+          <div class="url-hint" style="margin-bottom:6px">Gleiches Logo wie bei den Kundendaten (Schritt 2) – hier hochladen/ersetzen ändert es an beiden Stellen.</div>
           <div class="upload-zone">
-            <input type="file" id="fScLogo" accept="image/*" onchange="previewOne('fScLogo','prevScLogo')">
+            <input type="file" id="fScLogo" accept="image/*" onchange="onScLogoChange()">
             <div class="upload-icon">🏢</div>
             <div class="upload-txt">Logo des Unternehmens</div>
             <div class="uz-row">
@@ -409,13 +411,20 @@ input.v-invalid{border-color:#ef4444}
 
       <div class="result-box">
         <div class="result-actions">
-          <button class="btn-download" onclick="downloadFinal()">⬇ HTML-Datei herunterladen</button>
-          <button class="btn-deploy" id="btnDeploy" onclick="deployFinal()">🚀 Live veröffentlichen</button>
+          <div class="result-action-col">
+            <button class="btn-download" onclick="downloadFinal()">⬇ Schritt 1: HTML herunterladen</button>
+            <div class="result-hint">Als Backup, das (z.B. auf Reisen) auch offline funktioniert. Enthält alle Fotos, aber keine Videos.</div>
+          </div>
+          <div class="result-action-col">
+            <button class="btn-deploy" id="btnDeploy" onclick="deployFinal()">🚀 Schritt 2: Live veröffentlichen</button>
+            <div class="result-hint">Du erhältst eine passwortgeschützte Domain, die du bei der Demo nutzt und danach den Kund*innen zusendest.</div>
+          </div>
         </div>
         <div class="deploy-result" id="deployResult">
           <span>✅ Live unter:</span>
           <a id="deployUrl" href="#" target="_blank">–</a>
-          <button class="copy-btn" onclick="copyDeployUrl()">📋 Kopieren</button>
+          <span id="deployPwWrap">· Passwort: <strong id="deployPw">–</strong></span>
+          <button class="copy-btn" onclick="copyDeployBlock()">📋 Für E-Mail kopieren</button>
         </div>
         <div class="err" id="errBox4"></div>
       </div>
@@ -512,10 +521,6 @@ function goToStep(n) {
     document.getElementById('fCompanySc').value = gCustomer.companyName || '';
     updateScProgress();
   }
-  if (n === 3 && !gImages.logo && gCustomer.logoBase64) {
-    gImages.logo = gCustomer.logoBase64;
-    addThumbB64('prevScLogo', gImages.logo, false, 'logo');
-  }
   if (n === 4 && !gFinalHtml) runGenerateStep4();
 }
 
@@ -575,6 +580,12 @@ window.addEventListener('message', (e) => {
 function formatEuroDe(n) {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n || 0);
 }
+function normalizeEuroField(input) {
+  const raw = input.value.replace(/[^\d]/g, '');
+  if (!raw) return;
+  input.value = formatEuroDe(parseInt(raw, 10));
+  onCustomerInput();
+}
 function toggleArCalc() {
   const box = document.getElementById('arCalcBox');
   const open = box.style.display === 'none';
@@ -601,14 +612,37 @@ function onCustomerInput() {
 }
 async function onCustomerLogoChange() {
   const f = document.getElementById('fCustomerLogo').files[0];
-  const p = document.getElementById('prevCustomerLogo');
+  if (!f) { clearCompanyLogo(); return; }
+  setCompanyLogo(await fileToBase64(f));
+}
+async function onScLogoChange() {
+  const f = document.getElementById('fScLogo').files[0];
+  if (!f) { clearCompanyLogo(); return; }
+  setCompanyLogo(await fileToBase64(f));
+}
+// Kundenlogo (Titelfolie) und Unternehmenslogo (Schulcard) sind dasselbe Bild –
+// egal wo hochgeladen/eingefügt wird, es erscheint an beiden Stellen.
+function setCompanyLogo(b64) {
+  gCustomer.logoBase64 = b64;
+  gImages.logo = b64;
+  renderLogoThumb('prevCustomerLogo', b64);
+  renderLogoThumb('prevScLogo', b64);
+}
+function clearCompanyLogo() {
+  gCustomer.logoBase64 = '';
+  gImages.logo = '';
+  document.getElementById('prevCustomerLogo').innerHTML = '';
+  document.getElementById('prevScLogo').innerHTML = '';
+  document.getElementById('fCustomerLogo').value = '';
+  document.getElementById('fScLogo').value = '';
+}
+function renderLogoThumb(previewId, b64) {
+  const p = document.getElementById(previewId);
   p.innerHTML = '';
-  if (!f) { gCustomer.logoBase64 = ''; return; }
-  gCustomer.logoBase64 = await fileToBase64(f);
   const wrap = document.createElement('div'); wrap.className = 'thumb-wrap';
-  const img = document.createElement('img'); img.className = 'thumb'; img.src = gCustomer.logoBase64;
-  const rm = document.createElement('button'); rm.className = 'thumb-rm'; rm.textContent = '✕';
-  rm.onclick = (ev) => { ev.stopPropagation(); wrap.remove(); gCustomer.logoBase64 = ''; document.getElementById('fCustomerLogo').value = ''; };
+  const img = document.createElement('img'); img.className = 'thumb'; img.src = b64;
+  const rm = document.createElement('button'); rm.className = 'thumb-rm'; rm.title = 'Bild entfernen'; rm.textContent = '✕';
+  rm.onclick = (ev) => { ev.stopPropagation(); clearCompanyLogo(); };
   wrap.appendChild(img); wrap.appendChild(rm); p.appendChild(wrap);
 }
 
@@ -661,8 +695,7 @@ function applyPaste(zone, b64) {
   if (zone === 'hero')     { gImages.hero = b64;    addThumbB64('prevHero',     b64, false, 'hero'); }
   if (zone === 'story')    { if (!gImages.story) gImages.story = []; if (gImages.story.length < 4) { gImages.story.push(b64); addThumbB64('prevStory', b64, true, 'story'); } }
   if (zone === 'clothing') { gImages.clothing = b64; addThumbB64('prevClothing', b64, false, 'clothing'); }
-  if (zone === 'logo')     { gImages.logo = b64;    addThumbB64('prevScLogo',   b64, false, 'logo'); }
-  if (zone === 'customerLogo') { gCustomer.logoBase64 = b64; addThumbB64('prevCustomerLogo', b64, false, 'customerLogo'); }
+  if (zone === 'logo' || zone === 'customerLogo') { setCompanyLogo(b64); }
   cancelPaste();
 }
 function addThumbB64(previewId, b64, append, zone) {
@@ -678,8 +711,7 @@ function removeImage(zone, wrapEl) {
   wrapEl.remove();
   if (zone === 'hero')     gImages.hero = '';
   if (zone === 'clothing') gImages.clothing = '';
-  if (zone === 'logo')     gImages.logo = '';
-  if (zone === 'customerLogo') { gCustomer.logoBase64 = ''; document.getElementById('fCustomerLogo').value = ''; }
+  if (zone === 'logo' || zone === 'customerLogo') { clearCompanyLogo(); }
   if (zone === 'story') {
     const remaining = document.querySelectorAll('#prevStory .thumb');
     gImages.story = Array.from(remaining).map(img => img.src);
@@ -1442,6 +1474,14 @@ async function deployFinal() {
     const link = document.getElementById('deployUrl');
     link.href = result.url;
     link.textContent = result.url;
+    gDeployPassword = result.password || '';
+    const pwWrap = document.getElementById('deployPwWrap');
+    if (gDeployPassword) {
+      document.getElementById('deployPw').textContent = gDeployPassword;
+      pwWrap.style.display = '';
+    } else {
+      pwWrap.style.display = 'none';
+    }
     box.classList.add('show');
   } catch (e) {
     showErr4(e.message);
@@ -1450,9 +1490,13 @@ async function deployFinal() {
     btn.disabled = false;
   }
 }
-function copyDeployUrl() {
+let gDeployPassword = '';
+function copyDeployBlock() {
   const url = document.getElementById('deployUrl').href;
-  navigator.clipboard.writeText(url).catch(() => {});
+  const text = gDeployPassword
+    ? `${url}\nPasswort: ${gDeployPassword}`
+    : url;
+  navigator.clipboard.writeText(text).catch(() => {});
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

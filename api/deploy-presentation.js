@@ -3,10 +3,37 @@ const fs = require('fs');
 const path = require('path');
 const {
   findTemplate, findPerson, slugify, extFromDataUrl, renderPresentation,
+  generatePassword, injectPasswordGate,
 } = require('./_lib.js');
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const VERCEL_TOKEN = process.env.VERCEL_TOKEN;
+const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const PRAESENTATIONEN_KEY = 'praesentationen';
+
+async function redisCmd(...args) {
+  if (!REDIS_URL || !REDIS_TOKEN) return null;
+  const res = await fetch(REDIS_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  });
+  const json = await res.json();
+  return json.result;
+}
+
+async function logPresentation(entry) {
+  try {
+    const raw = await redisCmd('GET', PRAESENTATIONEN_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    list.unshift(entry);
+    if (list.length > 100) list.splice(100);
+    await redisCmd('SET', PRAESENTATIONEN_KEY, JSON.stringify(list));
+  } catch (err) {
+    console.warn('Konnte Präsentation nicht in Redis loggen:', err.message);
+  }
+}
 
 async function gh(method, apiPath, body) {
   const res = await fetch('https://api.github.com' + apiPath, {
@@ -89,11 +116,12 @@ async function deployPresentation(input) {
   if (!companyName) throw new Error('Firmenname fehlt.');
   if (!schulcardHtml) throw new Error('Schulcard fehlt – bitte zuerst Schritt 4 abschließen.');
 
-  const slug = slugify(companyName);
+  const slug = 'deinerstertag-' + slugify(companyName);
+  const password = generatePassword();
 
   // index.html mit relativen Dateinamen (nicht data:-URIs) — die referenzierten
-  // Dateien werden unten mit hochgeladen.
-  const indexHtml = renderPresentation(input, { embed: false });
+  // Dateien werden unten mit hochgeladen. Passwort-Gate schützt die Live-Domain.
+  const indexHtml = injectPasswordGate(renderPresentation(input, { embed: false }), password);
 
   const contactExt = (path.extname(person.photo) || '.jpg').replace(/^\./, '');
   const logoExt = extFromDataUrl(logoBase64, 'png');
@@ -162,11 +190,23 @@ async function deployPresentation(input) {
     throw new Error('Deployment fehlgeschlagen: ' + JSON.stringify(deploy.data));
   }
 
+  const liveUrl = `https://${slug}.vercel.app`;
+
+  await logPresentation({
+    id: slug + '-' + Date.now(),
+    companyName,
+    url: liveUrl,
+    password,
+    contactPersonId,
+    createdAt: new Date().toISOString(),
+  });
+
   return {
-    url: `https://${slug}.vercel.app`,
+    url: liveUrl,
     deploymentUrl: deploy.data.url ? `https://${deploy.data.url}` : null,
     repo: `${owner}/${slug}`,
     projectId,
+    password,
   };
 }
 
